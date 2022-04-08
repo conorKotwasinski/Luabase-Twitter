@@ -21,17 +21,28 @@ CH_ADMIN_PASSWORD = os.environ.get('CH_ADMIN_PASSWORD')
 
 SQLALCHEMY_DATABASE_URI = os.environ.get('SUPABASE_SQLALCHEMY_DATABASE_URI')
 SQLALCHEMY_TRACK_MODIFICATIONS = False
+SQL_POOL_PRE_PING = True
 
 app = Flask(__name__)
 app.config.from_object(__name__)
 
 CORS(app)
 
-session_options = {
-    'autocommit': True
+SQLALCHEMY_SESSION_OPTIONS = {
+    'autocommit': True,
+    'pool_size': 10,
+    'pool_recycle': 60,
+    "max_overflow": 2,
+    'pool_pre_ping': True,
 }
 
-db = SQLAlchemy(app, session_options=session_options)
+SQLALCHEMY_ENGINE_OPTIONS = {
+    'pool_size': 10,
+    'pool_recycle': 60,
+    'pool_pre_ping': True
+}
+
+db = SQLAlchemy(app, session_options=SQLALCHEMY_SESSION_OPTIONS, engine_options=SQLALCHEMY_ENGINE_OPTIONS)
 
 
 
@@ -262,7 +273,27 @@ def hello_world():
 @app.route('/ping')
 def ping():
     name = os.environ.get('NAME', 'World')
-    return "Hello {}!".format(name)
+    j = {'ok': True, 'name': name}
+    return json.dumps(j), 200, {'ContentType':'application/json'}
+
+@app.route('/ping_sql')
+def pingsql():
+    logger.info(f'ping_sql...')
+    with db.engine.connect() as con:
+        sql = f'''
+        select 
+        max(id) as max_id, 
+        min(id) as min_id, 
+        count(id) as count,
+        sum(case when j.status = 'running' then 1 else 0 end) as running
+        from "public".jobs as j
+        '''
+        statement = sqlalchemy.sql.text(sql)
+        j = con.execute(statement).fetchone()
+        return json.dumps(dict(j)), 200, {'ContentType':'application/json'}
+    # j = {'ok': False}
+    # return json.dumps(j), 200, {'ContentType':'application/json'}
+    
 
 @app.route('/run_job', methods=["GET", "POST"])
 def run_job():
@@ -282,7 +313,7 @@ testd = {
     "step": 2,
     "maxRunning": 200
 }
-getEthNameTags(testd)
+# getEthNameTags(testd)
 
 # if __name__ == "__main__":
 #     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

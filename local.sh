@@ -1,8 +1,9 @@
-export DOCKER_TAG=luabase-py
+source .env
 
-docker build -t ${DOCKER_TAG} . && PORT=5000 && \
-docker run -it -p ${PORT}:${PORT} \
---env-file .env \
--e PORT=${PORT} \
--e WORKERS=1 \
-${DOCKER_TAG}:latest
+export DOCKER_TAG=luabase-py
+export PORT=5000
+
+echo "starting build..."
+
+docker build -t ${DOCKER_TAG} .
+docker run -it -p ${PORT}:${PORT} --env-file .env ${DOCKER_TAG}:latest

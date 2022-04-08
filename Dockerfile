@@ -20,6 +20,7 @@ ENV PYTHONUNBUFFERED True
 
 # Install production dependencies.
 # RUN pip install --no-cache-dir -r requirements.txt
+COPY .env /app/
 COPY requirements.txt /app/
 # --no-cache-dir
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip pip3 --default-timeout=600 install -r /app/requirements.txt 
@@ -39,7 +40,7 @@ COPY logger.py /app/
 # Timeout is set to 0 to disable the timeouts of the workers to allow Cloud Run to handle instance scaling.
 # CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
 # 
-CMD cd app && exec gunicorn -t 900 --bind :$PORT --workers $WORKERS --threads 1 app:app
+CMD cd app && exec gunicorn -t 3600 --bind :$PORT --workers $WORKERS --threads 1 app:app
 
 
 # [END run_lua_py_dockerfile]

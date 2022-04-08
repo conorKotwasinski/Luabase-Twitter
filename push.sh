@@ -32,6 +32,7 @@ gcloud beta run services update ${DOCKER_TAG} \
     --set-env-vars "CH_ADMIN_PASSWORD=$CH_ADMIN_PASSWORD" \
     --set-env-vars "SUPABASE_SQLALCHEMY_DATABASE_URI=$SUPABASE_SQLALCHEMY_DATABASE_URI" \
     --set-env-vars "WORKERS=$WORKERS" \
+    --set-env-vars "THREADS=$THREADS" \
     --region us-central1 
 
 terminal-notifier -message "cloud run python deployed" -title "Info"

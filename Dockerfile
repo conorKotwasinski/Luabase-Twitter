@@ -40,7 +40,10 @@ COPY logger.py /app/
 # Timeout is set to 0 to disable the timeouts of the workers to allow Cloud Run to handle instance scaling.
 # CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
 # 
-CMD cd app && exec gunicorn -t 3600 --bind :$PORT --workers $WORKERS --threads 1 app:app
+
+# CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
+
+CMD cd app && exec gunicorn --timeout 0 --bind :$PORT --workers $WORKERS --threads $THREADS app:app
 
 
 # [END run_lua_py_dockerfile]

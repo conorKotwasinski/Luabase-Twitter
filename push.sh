@@ -23,7 +23,7 @@ docker push us.gcr.io/${PROJECT_ID}/${DOCKER_TAG}:latest
 gcloud beta run services update ${DOCKER_TAG} \
     --image us.gcr.io/${PROJECT_ID}/${DOCKER_TAG} \
     --platform managed \
-    --min-instances 1 \
+    --min-instances 10 \
     --memory 2Gi \
     --timeout 3600 \
     --account mike@luabase.com \

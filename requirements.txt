@@ -7,3 +7,4 @@ clickhouse-driver[numpy,lz4]==0.2.3
 Flask-Cors
 Flask-SQLAlchemy
 requests
+sentry-sdk[flask]

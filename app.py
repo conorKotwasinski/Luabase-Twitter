@@ -16,6 +16,19 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from clickhouse_driver import Client
 
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+sentry_sdk.init(
+    dsn="https://5fce4fd9b9404cbe978b509a2465f027@o1176187.ingest.sentry.io/6325459",
+    integrations=[FlaskIntegration()],
+
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production.
+    traces_sample_rate=0.1
+)
+
 SCRAPING_BEE_API_KEY = os.environ.get('SCRAPING_BEE_API_KEY')
 CH_ADMIN_PASSWORD = os.environ.get('CH_ADMIN_PASSWORD')
 
@@ -173,7 +186,7 @@ def getEthNameTags(data):
     jobSummary = getJobSummary(db.engine, data.get('type'))
     if jobSummary['running'] >= maxRunning:
         logger.info(f'already max running!')
-        return flask.jsonify({'ok': True, 'status': f"max of {maxRunning} already running"})
+        return {'ok': True, 'status': f"max of {maxRunning} already running"}
     maxJob = getMaxJob(db.engine, jobSummary['max_id'])
     newStart = maxJob['details'].get('end', -1) + 1
     newEnd = newStart + data.get('step', 100)
@@ -293,7 +306,6 @@ def pingsql():
         return json.dumps(dict(j)), 200, {'ContentType':'application/json'}
     # j = {'ok': False}
     # return json.dumps(j), 200, {'ContentType':'application/json'}
-    
 
 @app.route('/run_job', methods=["GET", "POST"])
 def run_job():
@@ -302,17 +314,20 @@ def run_job():
     if data.get('type') == 'getEthNameTag':
         j = getEthNameTags(data)
         return json.dumps(j), 200, {'ContentType':'application/json'}
+    if data.get('type') == 'getBtcEtl':
+        # j = getBtcEtl(data)
+        return json.dumps(j), 200, {'ContentType':'application/json'}
     j = {'ok': True, 'data': 'running'}
     return json.dumps(j), 200, {'ContentType':'application/json'}
 
 
-testd = {
-    "type": "getEthNameTag",
-    "start": -1,
-    "end": -1,
-    "step": 2,
-    "maxRunning": 200
-}
+# testd = {
+#     "type": "getEthNameTag",
+#     "start": -1,
+#     "end": -1,
+#     "step": 2,
+#     "maxRunning": 200
+# }
 # getEthNameTags(testd)
 
 # if __name__ == "__main__":

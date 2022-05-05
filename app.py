@@ -315,7 +315,12 @@ def run_job():
         j = getEthNameTags(data)
         return json.dumps(j), 200, {'ContentType':'application/json'}
     if data.get('type') == 'getBtcEtl':
-        # j = getBtcEtl(data)
+        target = data.get('target', 'both')
+        lag = data.get('lag', 6)
+        db_max_block = data.get('db_max_block', None)
+        btc_max_block = data.get('btc_max_block', None)
+
+        j = extract_transform_load_btc(getChClient(), BTC_QUICKNODE, target, lag, db_max_block, btc_max_block)
         return json.dumps(j), 200, {'ContentType':'application/json'}
     j = {'ok': True, 'data': 'running'}
     return json.dumps(j), 200, {'ContentType':'application/json'}

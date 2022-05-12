@@ -205,6 +205,16 @@ def getEthNameTags(data):
     print('jobRow: ', jobRow)
     logger.info(f'getting addresses... ${jobRow}')
     addresses = getLuaAddresses(newStart, newEnd)
+    if len(addresses) == 0:
+        logger.info(f'no addresses!')
+        jobDetails['reason'] = 'no addresses'
+        updateJobRow = {
+            'id': jobRow['row']['id'],
+            'status': 'error',
+            'details': json.dumps(jobDetails)
+        }
+        updateJob(db.engine, updateJobRow)
+        return {'ok': True, 'status': f"no addresses for {newStart} to {newEnd}"}
     logger.info(f'got {len(addresses)} address...')
     getManyTags(addresses.to_dict(orient='records'), newStart, newEnd)
     # mark job complete, successs
@@ -314,8 +324,22 @@ def run_job():
     if data.get('type') == 'getEthNameTag':
         j = getEthNameTags(data)
         return json.dumps(j), 200, {'ContentType':'application/json'}
-    if data.get('type') == 'getBtcEtl':
+    if data.get('type') == 'getBtcEtl': # go forward
         # j = getBtcEtl(data)
+        return json.dumps(j), 200, {'ContentType':'application/json'}
+    if data.get('type') == 'backlogBtc':
+        # get min block from postgres
+        # insertJob(min=minFromPg-20, max=minFromPg-1)
+        # load_btc(min=minFromPg-20, max=minFromPg-1)
+        # updateJob(asdfl jsdkf)
+        # if minFromPg-20 > 0:
+        #     url = "https://localhost:500/run_job"
+        #     payload = {"job": "missingLogs"}
+        #     headers = {"content-type": "application/json"}
+        #     try:
+        #         response = requests.request("POST", url, json=payload, headers=headers, timeout=1)
+        #     except requests.exceptions.ReadTimeout: 
+        #         pass
         return json.dumps(j), 200, {'ContentType':'application/json'}
     j = {'ok': True, 'data': 'running'}
     return json.dumps(j), 200, {'ContentType':'application/json'}
@@ -330,5 +354,5 @@ def run_job():
 # }
 # getEthNameTags(testd)
 
-# if __name__ == "__main__":
-#     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

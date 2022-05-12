@@ -19,6 +19,8 @@ from clickhouse_driver import Client
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
+from btc_etl import extract_transform_load_btc
+
 sentry_sdk.init(
     dsn="https://5fce4fd9b9404cbe978b509a2465f027@o1176187.ingest.sentry.io/6325459",
     integrations=[FlaskIntegration()],
@@ -35,6 +37,7 @@ CH_ADMIN_PASSWORD = os.environ.get('CH_ADMIN_PASSWORD')
 SQLALCHEMY_DATABASE_URI = os.environ.get('SUPABASE_SQLALCHEMY_DATABASE_URI')
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQL_POOL_PRE_PING = True
+QUICKNODE_BTC = os.environ.get('BTC_QUICKNODE')
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -314,14 +317,22 @@ def run_job():
     if data.get('type') == 'getEthNameTag':
         j = getEthNameTags(data)
         return json.dumps(j), 200, {'ContentType':'application/json'}
-    # if data.get('type') == 'getBtcEtl':
-    #     target = data.get('target', 'both')
-    #     lag = data.get('lag', 6)
-    #     db_max_block = data.get('db_max_block', None)
-    #     btc_max_block = data.get('btc_max_block', None)
+    if data.get('type') == 'getBtcEtl':
+        target = data.get('target', 'both')
+        lag = data.get('lag', 6)
+        start_block = data.get('start_block', None)
+        end_block = data.get('end_block', None)
 
-    #     j = extract_transform_load_btc(getChClient(), BTC_QUICKNODE, target, lag, db_max_block, btc_max_block)
-    #     return json.dumps(j), 200, {'ContentType':'application/json'}
+        j = extract_transform_load_btc(
+            getChClient(), 
+            QUICKNODE_BTC, 
+            db, 
+            target, 
+            lag, 
+            start_block, 
+            end_block
+            )
+        return json.dumps(j), 200, {'ContentType':'application/json'}
     j = {'ok': True, 'data': 'running'}
     return json.dumps(j), 200, {'ContentType':'application/json'}
 

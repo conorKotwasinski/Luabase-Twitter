@@ -33,6 +33,11 @@ ENV PORT 5000
 COPY app.py /app/
 COPY logger.py /app/
 
+COPY btc_etl.py /app/
+COPY pg_db_utils.py /app/
+
+
+
 # Run the web service on container startup. Here we use the gunicorn
 # webserver, with one worker process and 8 threads.
 # For environments with multiple CPU cores, increase the number of workers
@@ -44,7 +49,6 @@ COPY logger.py /app/
 # CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
 
 CMD cd app && exec gunicorn --timeout 0 --bind :$PORT --workers $WORKERS --threads $THREADS app:app
-
 
 # [END run_lua_py_dockerfile]
 # [END cloudrun_lua_py_dockerfile]

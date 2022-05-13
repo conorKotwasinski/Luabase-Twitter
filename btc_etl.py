@@ -367,16 +367,16 @@ def transform_load_btc_data(new_data, clickhouse_client):
 def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'both', lag = 6, start_block = None, end_block = None):
     
     ######check if another job is currently running######
-    jobSummary = getJobSummary(db.engine, 'getBtcEtl')
-    if jobSummary['running'] >= 1:
+    job_summary = getJobSummary(pg_db, 'getBtcEtl')
+    if job_summary['running'] >= 1:
         logger.info(f'already another job running!')
         return {'ok': True, 'status': f"max of 1 job already running"}
 
     #####set start and end blocks######
     #get max block+1 in db if start block is null
     if start_block == None:
-        maxJob = getMaxJob(pg_db.engine, jobSummary['max_id'])
-        start_block = maxJob['details'].get('end', -1) + 1
+        max_job = getMaxJob(pg_db.engine, job_summary['max_id'])
+        start_block = max_job['details'].get('end', -1) + 1
     #     start_block = get_max_btc_db_block(clickhouse_client, target)
     #     start_block += 1
     #     start_block = int(start_block)
@@ -393,43 +393,42 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
     
     ######extract new btc data############
     # insert new job that is running
-    jobDetails = {
+    job_details = {
         "type": "getBtcEtl",
         "subtype":target,
         "start": start_block,
         "end": end_block
     }
-    jobRow = {
-        'type': jobDetails['type'],
+    job_row = {
+        'type': job_details['type'],
         'status': 'running',
-        'details': json.dumps(jobDetails)
+        'details': json.dumps(job_details)
     }
-    jobRow = insertJob(pg_db.engine, jobRow)
-    logger.info(f'getting bitcoin data... ${jobRow}')
+    job_row = insertJob(pg_db.engine, job_row)
+    logger.info(f'getting bitcoin data... ${job_row}')
     try:
         new_data = get_new_btc_data(clickhouse_client, node_uri, start_block, end_block, target)
     except Exception as e:
-        logger.info(f'failed getting bitcoin data... ${jobRow}:', e)
+        logger.info(f'failed getting bitcoin data... ${job_row}:', e)
         updateJobRow = {
-            'id': jobRow['row']['id'],
+            'id': job_row['row']['id'],
             'status': 'failed',
-            'details': json.dumps(jobDetails)
+            'details': json.dumps(job_details)
         }
         updateJob(pg_db.engine, updateJobRow)
         return {'ok':False}
 
-    logger.info(f'completed getting bitcoin data... ${jobRow}')
+    logger.info(f'completed getting bitcoin data... ${job_row}')
 
     ######transform and load btc data########## 
-    logger.info(f'transforming and loading new bitcoin data... ${jobRow}')
+    logger.info(f'transforming and loading new bitcoin data... ${job_row}')
     transform_load_btc_data(new_data, clickhouse_client)
     # mark job complete, successs
     updateJobRow = {
-        'id': jobRow['row']['id'],
+        'id': job_row['row']['id'],
         'status': 'success',
-        'details': json.dumps(jobDetails)
+        'details': json.dumps(job_details)
     }
     updateJob(pg_db.engine, updateJobRow)
-    logger.info(f"job done. {jobRow}")
+    logger.info(f"job done. {job_row}")
     return {'ok': True}
-

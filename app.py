@@ -286,13 +286,13 @@ def hello_world():
     name = os.environ.get("NAME", "World")
     return "Hello {}!".format(name)
 
-@app.route('/ping')
+@app.route('/ping', methods=["GET", "POST"])
 def ping():
     name = os.environ.get('NAME', 'World')
     j = {'ok': True, 'name': name}
     return json.dumps(j), 200, {'ContentType':'application/json'}
 
-@app.route('/ping_sql')
+@app.route('/ping_sql', methods=["GET", "POST"])
 def pingsql():
     logger.info(f'ping_sql...')
     with db.engine.connect() as con:
@@ -320,13 +320,13 @@ def run_job():
     if data.get('type') == 'getBtcEtl':
         target = data.get('target', 'both')
         lag = data.get('lag', 6)
-        start_block = data.get('start_block', None)
-        end_block = data.get('end_block', None)
+        start_block = data.get('startBlock', None)
+        end_block = data.get('endBlock', None)
 
         j = extract_transform_load_btc(
             getChClient(), 
             QUICKNODE_BTC, 
-            db, 
+            db.engine, 
             target, 
             lag, 
             start_block, 

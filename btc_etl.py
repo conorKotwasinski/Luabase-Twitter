@@ -18,7 +18,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
 import flask
 import json
-from pg_db_utils import insertJob, updateJob, getJobSummary, getMaxJob
+from pg_db_utils import insertJob, updateJob, getJobSummary, getDoneMaxJob
 
 # function for getting max block in clickhouse
 def get_max_btc_db_block(clickhouse_client, target = 'both'):
@@ -382,7 +382,7 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
     #####set start and end blocks######
     #get max block+1 in db if start block is null
     if start_block == None:
-        max_job = getMaxJob(pg_db.engine, job_summary['max_id'])
+        max_job = getDoneMaxJob(pg_db.engine, job_summary['max_id'])
         start_block = max_job['details'].get('end', -1) + 1
     #     start_block = get_max_btc_db_block(clickhouse_client, target)
     #     start_block += 1

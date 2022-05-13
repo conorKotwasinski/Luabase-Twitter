@@ -48,12 +48,13 @@ def getJobSummary(engine, t):
         res = con.execute(statement).fetchone()
         return res
 
-def getMaxJob(engine, jobId):
+def getDoneMaxJob(engine, jobId):
     with engine.connect() as con:
         sql = f'''
         select *
         from "public".jobs as j
         where j.id = {jobId}
+        and status = 'success'
         '''
         statement = sqlalchemy.sql.text(sql)
         res = con.execute(statement).fetchone()

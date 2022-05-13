@@ -396,7 +396,7 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
         end_block = int(end_block)
 
     #check if blockchain max block > start_block 
-    if start_block <= end_block:
+    if end_block < start_block:
         logger.info(f"Already caught up!")
         return {'ok': True}
     

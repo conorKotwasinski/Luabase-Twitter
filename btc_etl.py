@@ -396,7 +396,9 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
         end_block = int(end_block)
 
     #check if blockchain max block > start_block 
-    assert end_block > start_block, 'db max block >= blockchain max block minus lag'
+    if start_block <= end_block:
+        logger.info(f"Already caught up!")
+        return {'ok': True}
     
     ######extract new btc data############
     # insert new job that is running

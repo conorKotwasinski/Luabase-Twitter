@@ -431,7 +431,17 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
 
     ######transform and load btc data########## 
     logger.info(f'transforming and loading new bitcoin data... ${job_row}')
-    transform_load_btc_data(new_data, clickhouse_client)
+    try:
+        transform_load_btc_data(new_data, clickhouse_client)
+    except:
+        logger.info(f'failed loading bitcoin data... ${job_row}:', e)
+        updateJobRow = {
+            'id': job_row['row']['id'],
+            'status': 'failed',
+            'details': json.dumps(job_details)
+        }
+        updateJob(pg_db.engine, updateJobRow)
+        return {'ok':False}
     # mark job complete, successs
     updateJobRow = {
         'id': job_row['row']['id'],

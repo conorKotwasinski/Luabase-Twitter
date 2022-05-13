@@ -121,9 +121,12 @@ def get_new_btc_data(clickhouse_client, uri, start_block, end_block, target = 'b
                 try_counter += 1
                 print(e)
                 print('failed getting block data from quicknode on try {try_counter}'.format(try_counter = try_counter))
-
-        return {'blocks':blocks}
-
+        if try_counter > 10:
+            raise AttributeError('failed to get new data from quicknode after 10 tries')
+        else:
+            return {'blocks':blocks}
+    
+    #get new transactions
     elif target == 'transaction':
         try_counter = 1
         data_pull_succeeded = False
@@ -135,6 +138,8 @@ def get_new_btc_data(clickhouse_client, uri, start_block, end_block, target = 'b
                 try_counter += 1
                 print(e)
                 print('failed getting transaction data from quicknode on try {try_counter}'.format(try_counter = try_counter))
+        if try_counter > 10:
+            raise AttributeError('failed to get new data from quicknode after 10 tries')
 
         #retrieve enriched transaction data 
         data_pull_succeeded = False
@@ -149,10 +154,11 @@ def get_new_btc_data(clickhouse_client, uri, start_block, end_block, target = 'b
                 print('failed getting enriched transaction data from quicknode on try {try_counter}'.format(try_counter = try_counter))
         
         if try_counter > 10:
-            return None
+            raise AttributeError('failed to get new data from quicknode after 10 tries')
         else:
             return {'transactions':transactions}
 
+    #get new blocks and transactions
     elif target == 'both':
         try_counter = 1
         data_pull_succeeded = False
@@ -164,6 +170,8 @@ def get_new_btc_data(clickhouse_client, uri, start_block, end_block, target = 'b
                 try_counter += 1
                 print(e)
                 print('failed getting block & transaction data from quicknode on try {try_counter}'.format(try_counter = try_counter))
+        if try_counter > 10:
+            raise AttributeError('failed to get new data from quicknode after 10 tries')
 
         #retrieve enriched transaction data 
         try_counter = 1
@@ -176,13 +184,12 @@ def get_new_btc_data(clickhouse_client, uri, start_block, end_block, target = 'b
                 try_counter += 1
                 print(e)
                 print('failed getting enriched transaction data from quicknode on try {try_counter}'.format(try_counter = try_counter))
-
         if try_counter > 10:
-            return None
+            raise AttributeError('failed to get new data from quicknode after 10 tries')
         else:
             return {'blocks':blocks, 'transactions':transactions}
 
-    
+
 #function to convert raw blocks json to pandas df   
 def blocks_json_to_df(blocks_json):
     blocks_df = pd.DataFrame(blocks_json)

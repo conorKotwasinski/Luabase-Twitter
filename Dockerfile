@@ -33,8 +33,8 @@ ENV PORT 5000
 COPY app.py /app/
 COPY logger.py /app/
 
-COPY btc_etl.py /app/
-COPY pg_db_utils.py /app/
+COPY el/btc_etl.py /app/
+COPY utils/pg_db_utils.py /app/
 
 
 

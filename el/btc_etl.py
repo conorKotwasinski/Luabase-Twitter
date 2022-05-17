@@ -212,6 +212,9 @@ def txn_input_output(transactions_json):
         else:
             for input in inputs:
                 input['transaction_hash'] = txn['hash']
+                input['block_number'] = txn['block_number']
+                input['block_hash'] = txn['block_hash']
+                input['block_timestamp'] = txn['block_timestamp']
                 transaction_inputs.append(input)
 
         if len(outputs) == 0:
@@ -219,6 +222,9 @@ def txn_input_output(transactions_json):
         else:
             for output in outputs:
                 output['transaction_hash'] = txn['hash']
+                output['block_number'] = txn['block_number']
+                output['block_hash'] = txn['block_hash']
+                output['block_timestamp'] = txn['block_timestamp']
                 transaction_outputs.append(output)
     return transaction_inputs, transaction_outputs
 
@@ -235,9 +241,11 @@ def txn_json_to_df(transactions_json, transaction_inputs, transaction_outputs):
 
     transaction_inputs_df = pd.DataFrame(transaction_inputs)
     transaction_inputs_df = transaction_inputs_df.rename(columns = {'index':'input_index'})
+    transaction_inputs_df['block_timestamp'] = pd.to_datetime(transaction_inputs_df.block_timestamp, unit = 's', origin = 'unix')
 
     transaction_outputs_df = pd.DataFrame(transaction_outputs)
     transaction_outputs_df = transaction_outputs_df.rename(columns = {'index':'output_index'})
+    transaction_outputs_df['block_timestamp'] = pd.to_datetime(transaction_outputs_df.block_timestamp, unit = 's', origin = 'unix')
 
     del transactions_df['type']
     return transactions_df, transaction_inputs_df, transaction_outputs_df
@@ -301,7 +309,10 @@ def load_transactions(transactions_df, transaction_inputs_df, transaction_output
         type,
         addresses,
         value,
-        transaction_hash
+        transaction_hash,
+        block_number,
+        block_hash,
+        block_timestamp
     ) VALUES
     '''
     clickhouse_client.insert_dataframe(inputs_load_sql, transaction_inputs_df)
@@ -318,7 +329,10 @@ def load_transactions(transactions_df, transaction_inputs_df, transaction_output
         type,
         addresses,
         value,
-        transaction_hash
+        transaction_hash,
+        block_number,
+        block_hash,
+        block_timestamp
     ) VALUES
     '''
     clickhouse_client.insert_dataframe(outputs_load_sql, transaction_outputs_df)

@@ -8,6 +8,9 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import sqlalchemy
 
+import utils.lua_utils as lu
+test_from_cloud_run = lu.get_secret('test_from_cloud_run')
+print('test_from_cloud_run: ', test_from_cloud_run)
 
 from logger import logger
 
@@ -18,8 +21,8 @@ from clickhouse_driver import Client
 
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
-from pg_db_utils import insertJob, updateJob, getJobSummary, getDoneMaxJob, getMaxJob
-from btc_etl import extract_transform_load_btc
+from utils.pg_db_utils import insertJob, updateJob, getJobSummary, getDoneMaxJob, getMaxJob
+from el.btc_etl import extract_transform_load_btc
 
 sentry_sdk.init(
     dsn="https://5fce4fd9b9404cbe978b509a2465f027@o1176187.ingest.sentry.io/6325459",
@@ -240,6 +243,12 @@ def hello_world():
 def ping():
     name = os.environ.get('NAME', 'World')
     j = {'ok': True, 'name': name}
+    return json.dumps(j), 200, {'ContentType':'application/json'}
+
+@app.route('/test_secret', methods=["GET", "POST"])
+def test_secret():
+    test_from_cloud_run = lu.get_secret('test_from_cloud_run')
+    j = {'ok': True, 'test_from_cloud_run': test_from_cloud_run}
     return json.dumps(j), 200, {'ContentType':'application/json'}
 
 @app.route('/ping_sql', methods=["GET", "POST"])

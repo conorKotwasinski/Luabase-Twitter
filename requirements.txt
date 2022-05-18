@@ -9,3 +9,7 @@ Flask-SQLAlchemy
 requests
 sentry-sdk[flask]
 git+https://github.com/swang2016/bitcoin-etl#egg=bitcoin-etl
+
+# google shit
+google-cloud-secret-manager==2.10.0
+solana

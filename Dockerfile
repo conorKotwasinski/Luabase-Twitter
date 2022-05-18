@@ -20,6 +20,7 @@ ENV PYTHONUNBUFFERED True
 
 # Install production dependencies.
 # RUN pip install --no-cache-dir -r requirements.txt
+
 COPY .env /app/
 COPY requirements.txt /app/
 # --no-cache-dir
@@ -33,8 +34,8 @@ ENV PORT 5000
 COPY app.py /app/
 COPY logger.py /app/
 
-COPY el/btc_etl.py /app/
-COPY utils/pg_db_utils.py /app/
+COPY el /app/el
+COPY utils /app/utils
 
 
 

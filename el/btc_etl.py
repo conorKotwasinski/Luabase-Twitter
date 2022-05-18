@@ -18,7 +18,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
 import flask
 import json
-from pg_db_utils import insertJob, updateJob, getJobSummary, getDoneMaxJob
+from utils.pg_db_utils import insertJob, updateJob, getJobSummary, getDoneMaxJob
 
 # function for getting max block in clickhouse
 def get_max_btc_db_block(clickhouse_client, target = 'both'):

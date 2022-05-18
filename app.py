@@ -34,10 +34,10 @@ sentry_sdk.init(
     traces_sample_rate=0.1
 )
 
-SCRAPING_BEE_API_KEY = os.environ.get('SCRAPING_BEE_API_KEY')
-CH_ADMIN_PASSWORD = os.environ.get('CH_ADMIN_PASSWORD')
+SCRAPING_BEE_API_KEY = lu.get_secret('SCRAPING_BEE_API_KEY')
+CH_ADMIN_PASSWORD = lu.get_secret('CH_ADMIN_PASSWORD')
 
-SQLALCHEMY_DATABASE_URI = os.environ.get('SUPABASE_SQLALCHEMY_DATABASE_URI')
+SQLALCHEMY_DATABASE_URI = lu.get_secret('SUPABASE_SQLALCHEMY_DATABASE_URI')
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQL_POOL_PRE_PING = True
 QUICKNODE_BTC = os.environ.get('BTC_QUICKNODE')
@@ -247,7 +247,7 @@ def ping():
 
 @app.route('/test_secret', methods=["GET", "POST"])
 def test_secret():
-    test_from_cloud_run = lu.get_secret('test_from_cloud_run')
+    test_from_cloud_run = lu.get_secret('ANOTHER_TEST')
     j = {'ok': True, 'test_from_cloud_run': test_from_cloud_run}
     return json.dumps(j), 200, {'ContentType':'application/json'}
 

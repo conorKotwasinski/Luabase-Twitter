@@ -1,8 +1,5 @@
 from google.cloud import secretmanager
 
-# Import the Secret Manager client library.
-from google.cloud import secretmanager
-
 # Create the Secret Manager client.
 secret_client = secretmanager.SecretManagerServiceClient()
 
@@ -26,6 +23,5 @@ def get_secret(secret_id, version_id='latest'):
     # WARNING: Do not print the secret in a production environment - this
     # snippet is showing how to access the secret material.
     payload = response.payload.data.decode("UTF-8")
-    print("Plaintext: {}".format(payload))
     return payload
     

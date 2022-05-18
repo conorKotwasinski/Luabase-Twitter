@@ -59,3 +59,14 @@ def getDoneMaxJob(engine, jobId):
         statement = sqlalchemy.sql.text(sql)
         res = con.execute(statement).fetchone()
         return res
+
+def getMaxJob(engine, jobId):
+    with engine.connect() as con:
+        sql = f'''
+        select *
+        from "public".jobs as j
+        where j.id = {jobId}
+        '''
+        statement = sqlalchemy.sql.text(sql)
+        res = con.execute(statement).fetchone()
+        return res

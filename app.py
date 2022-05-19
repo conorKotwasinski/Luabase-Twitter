@@ -7,6 +7,9 @@ import uuid
 from flask_cors import CORS 
 from flask_sqlalchemy import SQLAlchemy
 import sqlalchemy
+from datetime import datetime, timedelta
+from dateutil.relativedelta import *
+from google.cloud import bigquery
 
 import utils.lua_utils as lu
 test_from_cloud_run = lu.get_secret('test_from_cloud_run')
@@ -23,6 +26,7 @@ import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from utils.pg_db_utils import insertJob, updateJob, getJobSummary, getDoneMaxJob, getMaxJob
 from el.btc_etl import extract_transform_load_btc
+from el.btc_transaction_backlog import get_btc_txn_backlog
 
 sentry_sdk.init(
     dsn="https://5fce4fd9b9404cbe978b509a2465f027@o1176187.ingest.sentry.io/6325459",
@@ -62,7 +66,7 @@ SQLALCHEMY_ENGINE_OPTIONS = {
 }
 
 db = SQLAlchemy(app, session_options=SQLALCHEMY_SESSION_OPTIONS, engine_options=SQLALCHEMY_ENGINE_OPTIONS)
-
+bg_client = bigquery.Client()
 
 
 def send_request(url):
@@ -293,7 +297,25 @@ def run_job():
             )
         return json.dumps(j), 200, {'ContentType':'application/json'}
     if data.get('type') == 'backlogBtcTxns':
-        # get min block from postgres
+        # get min block_timestamp_month from postgres
+        jobSummary = getJobSummary(db.engine, data.get('type'))
+        maxJob = getMaxJob(db.engine, jobSummary['max_id'])
+        lastEnd = datetime.strptime(maxJob['details'].get('end'), '%Y-%m-%d')
+        #subtract 1 month from lastEnd for new job
+        newStart = lastEnd + relativedelta(months=-1)
+        #if newStart >= minimum block_timestamp_month then start new job
+        if newStart >= datetime(2021, 5, 1):
+            newStart = newStart.strftime('%Y-%m-%d')
+            months_ls = data.get('months_ls', [newStart])
+            increment = data.get('increment', 10000)
+            j = get_btc_txn_backlog(
+                months_ls,
+                bg_client,
+                getChClient(),
+                db,
+                increment
+            )
+
         # insertJob(min=minFromPg-20, max=minFromPg-1)
         # load_btc(min=minFromPg-20, max=minFromPg-1)
         # updateJob(asdfl jsdkf)

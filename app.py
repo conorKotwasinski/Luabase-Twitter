@@ -301,10 +301,15 @@ def run_job():
         jobSummary = getJobSummary(db.engine, data.get('type'))
         maxJob = getMaxJob(db.engine, jobSummary['max_id'])
         lastEnd = datetime.strptime(maxJob['details'].get('end'), '%Y-%m-%d')
-        #subtract 1 month from lastEnd for new job
-        newStart = lastEnd + relativedelta(months=-1)
-        #if newStart >= minimum block_timestamp_month then start new job
-        if newStart >= datetime(2021, 5, 1):
+        #if months_ls not specified, subtract 1 month from lastEnd for new job
+        months_ls = data.get('months_ls', [])
+        if len(months_ls) == 0:
+            newStart = lastEnd + relativedelta(months=-1)
+        else:
+            newStart = datetime.strptime(months_ls[0], '%Y-%m-%d')
+
+        #if newStart >= minimum block_timestamp_month and < lastEnd then start new job
+        if newStart >= datetime(2021, 4, 1) and newStart < lastEnd:
             newStart = newStart.strftime('%Y-%m-%d')
             months_ls = data.get('months_ls', [newStart])
             increment = data.get('increment', 10000)
@@ -315,7 +320,8 @@ def run_job():
                 db,
                 increment
             )
-
+        else:
+            return {'ok': True, 'status': f"All caught up!"}
         # insertJob(min=minFromPg-20, max=minFromPg-1)
         # load_btc(min=minFromPg-20, max=minFromPg-1)
         # updateJob(asdfl jsdkf)

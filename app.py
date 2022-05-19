@@ -292,7 +292,7 @@ def run_job():
             end_block
             )
         return json.dumps(j), 200, {'ContentType':'application/json'}
-    if data.get('type') == 'backlogBtc':
+    if data.get('type') == 'backlogBtcTxns':
         # get min block from postgres
         # insertJob(min=minFromPg-20, max=minFromPg-1)
         # load_btc(min=minFromPg-20, max=minFromPg-1)

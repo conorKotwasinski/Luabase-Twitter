@@ -6,6 +6,7 @@ import sys
 import uuid
 from flask_cors import CORS 
 from flask_sqlalchemy import SQLAlchemy
+from pyparsing import dbl_slash_comment
 import sqlalchemy
 from datetime import datetime, timedelta
 from dateutil.relativedelta import *
@@ -309,19 +310,65 @@ def run_job():
             newStart = datetime.strptime(months_ls[0], '%Y-%m-%d')
 
         #if newStart >= minimum block_timestamp_month and < lastEnd then start new job
-        if newStart >= datetime(2021, 4, 1) and newStart < lastEnd:
+        if newStart >= datetime(2020, 3, 1) and newStart < lastEnd:
             newStart = newStart.strftime('%Y-%m-%d')
             months_ls = data.get('months_ls', [newStart])
             increment = data.get('increment', 10000)
-            j = get_btc_txn_backlog(
-                months_ls,
-                bg_client,
-                getChClient(),
-                db,
-                increment
-            )
+
+            #insert job
+            jobDetails = {
+                "type": "backlogBtcTxns",
+                "start": months_ls[0],
+                "end": months_ls[-1]
+            }
+            jobRow = {
+                'type': jobDetails['type'],
+                'status': 'running',
+                'details': json.dumps(jobDetails)
+            }
+            jobRow = insertJob(db.engine, jobRow)
+
+            #call job again to run in parallel
+            url = "http://localhost:5000/run_job"
+            payload = {"type": "backlogBtcTxns"}
+            headers = {"content-type": "application/json"}
+            try:
+                response = requests.request("POST", url, json=payload, headers=headers, timeout=5)
+            except Exception as e: 
+                print(e)
+                return {'ok':False}
+
+            try:
+                j = get_btc_txn_backlog(
+                    months_ls,
+                    bg_client,
+                    getChClient(),
+                    db,
+                    increment
+                )
+                #mark job complete, successs
+                updateJobRow = {
+                    'id': jobRow['row']['id'],
+                    'status': 'success',
+                    'details': json.dumps(jobDetails)
+                }
+                updateJob(db.engine, updateJobRow)
+                logger.info(f"job done. {jobRow}")
+                return {'ok': True}
+
+            except Exception as e:
+                #if job fails mark as failed
+                # print(e)
+                # logger.info(f'failed getting backlog data at {month}, row {row_ct}:', e)
+                # updateJobRow = {
+                #     'id': jobRow['row']['id'],
+                #     'status': 'failed',
+                #     'details': json.dumps(jobDetails)
+                # }
+                # updateJob(db.engine, updateJobRow)
+                return {'ok':False}
         else:
-            return {'ok': True, 'status': f"All caught up!"}
+            return {'ok': True, 'status': f"All caught up for {months_ls}!".format(months_ls = months_ls)}
         # insertJob(min=minFromPg-20, max=minFromPg-1)
         # load_btc(min=minFromPg-20, max=minFromPg-1)
         # updateJob(asdfl jsdkf)

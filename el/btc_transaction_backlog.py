@@ -98,17 +98,17 @@ INSERT INTO bitcoin.transaction_outputs_raw
 def get_btc_txn_backlog(months_ls, bg_client, clickhouse_client, pg_db, increment = 10000):
 
     # insert new job that is running
-    jobDetails = {
-        "type": "backlogBtcTxns",
-        "start": months_ls[0],
-        "end": months_ls[-1]
-    }
-    jobRow = {
-        'type': jobDetails['type'],
-        'status': 'running',
-        'details': json.dumps(jobDetails)
-    }
-    jobRow = insertJob(pg_db.engine, jobRow)
+    # jobDetails = {
+    #     "type": "backlogBtcTxns",
+    #     "start": months_ls[0],
+    #     "end": months_ls[-1]
+    # }
+    # jobRow = {
+    #     'type': jobDetails['type'],
+    #     'status': 'running',
+    #     'details': json.dumps(jobDetails)
+    # }
+    # jobRow = insertJob(pg_db.engine, jobRow)
 
     try:
         for month in months_ls:
@@ -174,14 +174,14 @@ def get_btc_txn_backlog(months_ls, bg_client, clickhouse_client, pg_db, incremen
                     outputs_ls = []
                 row_ct += 1
         #mark job complete, successs
-        updateJobRow = {
-            'id': jobRow['row']['id'],
-            'status': 'success',
-            'details': json.dumps(jobDetails)
-        }
-        updateJob(pg_db.engine, updateJobRow)
-        logger.info(f"job done. {jobRow}")
-        return {'ok': True}
+        # updateJobRow = {
+        #     'id': jobRow['row']['id'],
+        #     'status': 'success',
+        #     'details': json.dumps(jobDetails)
+        # }
+        # updateJob(pg_db.engine, updateJobRow)
+        # logger.info(f"job done. {jobRow}")
+        # return {'ok': True}
     except Exception as e:
         #if job fails mark as failed
         logger.info(f'failed getting backlog data at {month}, row {row_ct}:', e)

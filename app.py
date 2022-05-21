@@ -284,7 +284,8 @@ def get_jobs():
         }
         pgu.updateJobStatus(db.engine, updateJobRow)
         # send job to cloud run with post request
-        url = "https://luabase-mjr-py.ngrok.io/run_jobs"
+        # url = "https://luabase-mjr-py.ngrok.io/run_jobs"
+        url = "https://luabase-py-msgn5tdnsa-uc.a.run.app"
         payload = job['details']
         headers = {"content-type": "application/json"}
         # try:
@@ -341,4 +342,4 @@ def run_job():
 # getEthNameTags(testd)
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", threaded=True, port=int(os.environ.get("PORT", 5000)))
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

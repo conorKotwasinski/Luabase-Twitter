@@ -287,6 +287,7 @@ def get_jobs():
         # url = "https://luabase-mjr-py.ngrok.io/run_job"
         url = "https://luabase-py-msgn5tdnsa-uc.a.run.app/run_job"
         payload = job['details']
+        payload['id'] = job['id']
         headers = {"content-type": "application/json"}
         # try:
         response = requests.request("POST", url, json=payload, headers=headers)
@@ -323,7 +324,7 @@ def run_job():
     if data.get('type') == 'testJob':
         logger.info(f'run_job is testJob!!!!!!!!!!!: {data}')
         updateJobRow = {
-            'id': job['id'],
+            'id': data['id'],
             'status': 'success'
         }
         pgu.updateJobStatus(db.engine, updateJobRow)

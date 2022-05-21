@@ -42,7 +42,7 @@ CH_ADMIN_PASSWORD = lu.get_secret('CH_ADMIN_PASSWORD')
 SQLALCHEMY_DATABASE_URI = lu.get_secret('SUPABASE_SQLALCHEMY_DATABASE_URI')
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQL_POOL_PRE_PING = True
-QUICKNODE_BTC = os.environ.get('BTC_QUICKNODE')
+QUICKNODE_BTC = lu.get_secret('BTC_QUICKNODE')
 
 app = Flask(__name__)
 app.config.from_object(__name__)

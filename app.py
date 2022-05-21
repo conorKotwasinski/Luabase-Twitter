@@ -328,6 +328,7 @@ def run_job():
             'status': 'success'
         }
         pgu.updateJobStatus(db.engine, updateJobRow)
+        j = {'ok': True, 'data': updateJobRow}
         return json.dumps(j), 200, {'ContentType':'application/json'}
     j = {'ok': True, 'data': 'running'}
     return json.dumps(j), 200, {'ContentType':'application/json'}

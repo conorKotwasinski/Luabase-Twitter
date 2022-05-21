@@ -1,4 +1,5 @@
 source .env
+source ~/.zprofile
 
 export DOCKER_TAG=luabase-py
 export PORT=5000

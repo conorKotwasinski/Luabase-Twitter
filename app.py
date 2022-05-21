@@ -1,3 +1,4 @@
+from concurrent.futures import thread
 from flask import Flask
 import flask
 import json
@@ -21,7 +22,8 @@ from clickhouse_driver import Client
 
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
-from utils.pg_db_utils import insertJob, updateJob, getJobSummary, getDoneMaxJob, getMaxJob
+from utils.pg_db_utils import insertJob, updateJob, getJobSummary, getPendingJobs, getDoneMaxJob, getMaxJob
+import utils.pg_db_utils as pgu
 from el.btc_etl import extract_transform_load_btc
 
 sentry_sdk.init(
@@ -269,6 +271,31 @@ def pingsql():
     # j = {'ok': False}
     # return json.dumps(j), 200, {'ContentType':'application/json'}
 
+@app.route('/get_jobs', methods=["GET", "POST"])
+def get_jobs():
+    data = flask.request.get_json()
+    logger.info(f'get_jobs: {data}')
+    jobs = getPendingJobs(db.engine)
+    for job in jobs:
+        # update job status to running
+        updateJobRow = {
+            'id': job['id'],
+            'status': 'running'
+        }
+        pgu.updateJobStatus(db.engine, updateJobRow)
+        # send job to cloud run with post request
+        url = "https://luabase-mjr-py.ngrok.io/run_jobs"
+        payload = job['details']
+        headers = {"content-type": "application/json"}
+        # try:
+        response = requests.request("POST", url, json=payload, headers=headers)
+        logger.info(f'get_jobs to run_job: {payload}')
+        # except requests.exceptions.ReadTimeout: 
+        #     pass
+        
+    j = {'ok': True, 'data': jobs}
+    return json.dumps(j), 200, {'ContentType':'application/json'}
+
 @app.route('/run_job', methods=["GET", "POST"])
 def run_job():
     data = flask.request.get_json()
@@ -292,19 +319,13 @@ def run_job():
             end_block
             )
         return json.dumps(j), 200, {'ContentType':'application/json'}
-    if data.get('type') == 'backlogBtc':
-        # get min block from postgres
-        # insertJob(min=minFromPg-20, max=minFromPg-1)
-        # load_btc(min=minFromPg-20, max=minFromPg-1)
-        # updateJob(asdfl jsdkf)
-        # if minFromPg-20 > 0:
-        #     url = "https://localhost:500/run_job"
-        #     payload = {"job": "missingLogs"}
-        #     headers = {"content-type": "application/json"}
-        #     try:
-        #         response = requests.request("POST", url, json=payload, headers=headers, timeout=1)
-        #     except requests.exceptions.ReadTimeout: 
-        #         pass
+    if data.get('type') == 'testJob':
+        logger.info(f'run_job is testJob!!!!!!!!!!!: {data}')
+        updateJobRow = {
+            'id': job['id'],
+            'status': 'success'
+        }
+        pgu.updateJobStatus(db.engine, updateJobRow)
         return json.dumps(j), 200, {'ContentType':'application/json'}
     j = {'ok': True, 'data': 'running'}
     return json.dumps(j), 200, {'ContentType':'application/json'}
@@ -320,4 +341,4 @@ def run_job():
 # getEthNameTags(testd)
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(debug=True, host="0.0.0.0", threaded=True, port=int(os.environ.get("PORT", 5000)))

@@ -290,8 +290,8 @@ def get_jobs():
         pgu.updateJobStatus(db.engine, updateJobRow)
         # send job to cloud run with post request
         # url = "https://luabase-mjr-py.ngrok.io/run_job"
-        # url = "https://luabase-py-msgn5tdnsa-uc.a.run.app/run_job"
-        url = "http://localhost:5000/run_job"
+        # url = "http://localhost:5000/run_job"
+        url = "https://luabase-py-msgn5tdnsa-uc.a.run.app/run_job"
         payload = job['details']
         payload['id'] = job['id']
         headers = {"content-type": "application/json"}

@@ -1,3 +1,4 @@
+from concurrent.futures import thread
 from flask import Flask
 import flask
 import json
@@ -25,7 +26,8 @@ from clickhouse_driver import Client
 
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
-from utils.pg_db_utils import insertJob, updateJob, getJobSummary, getDoneMaxJob, getMaxJob
+from utils.pg_db_utils import insertJob, updateJob, getJobSummary, getPendingJobs, getDoneMaxJob, getMaxJob
+import utils.pg_db_utils as pgu
 from el.btc_etl import extract_transform_load_btc
 from el.btc_transaction_backlog import get_btc_txn_backlog
 
@@ -274,6 +276,34 @@ def pingsql():
     # j = {'ok': False}
     # return json.dumps(j), 200, {'ContentType':'application/json'}
 
+@app.route('/get_jobs', methods=["GET", "POST"])
+def get_jobs():
+    data = flask.request.get_json()
+    logger.info(f'get_jobs: {data}')
+    jobs = getPendingJobs(db.engine)
+    for job in jobs:
+        # update job status to running
+        updateJobRow = {
+            'id': job['id'],
+            'status': 'running'
+        }
+        pgu.updateJobStatus(db.engine, updateJobRow)
+        # send job to cloud run with post request
+        # url = "https://luabase-mjr-py.ngrok.io/run_job"
+        # url = "https://luabase-py-msgn5tdnsa-uc.a.run.app/run_job"
+        url = "http://localhost:5000/run_job"
+        payload = job['details']
+        payload['id'] = job['id']
+        headers = {"content-type": "application/json"}
+        # try:
+        response = requests.request("POST", url, json=payload, headers=headers)
+        logger.info(f'get_jobs to run_job: {payload}')
+        # except requests.exceptions.ReadTimeout: 
+        #     pass
+        
+    j = {'ok': True, 'data': jobs}
+    return json.dumps(j), 200, {'ContentType':'application/json'}
+
 @app.route('/run_job', methods=["GET", "POST"])
 def run_job():
     data = flask.request.get_json()
@@ -297,89 +327,30 @@ def run_job():
             end_block
             )
         return json.dumps(j), 200, {'ContentType':'application/json'}
+
     if data.get('type') == 'backlogBtcTxns':
-        # get min block_timestamp_month from postgres
-        jobSummary = getJobSummary(db.engine, data.get('type'))
-        maxJob = getMaxJob(db.engine, jobSummary['max_id'])
-        lastEnd = datetime.strptime(maxJob['details'].get('end'), '%Y-%m-%d')
-        #if months_ls not specified, subtract 1 month from lastEnd for new job
-        months_ls = data.get('months_ls', [])
-        if len(months_ls) == 0:
-            newStart = lastEnd + relativedelta(months=-1)
-        else:
-            newStart = datetime.strptime(months_ls[0], '%Y-%m-%d')
+        month = data.get('month')
+        increment = data.get('increment', 10000)
+        job_id = data.get('id')
 
-        #if newStart >= minimum block_timestamp_month and < lastEnd then start new job
-        if newStart >= datetime(2020, 3, 1) and newStart < lastEnd:
-            newStart = newStart.strftime('%Y-%m-%d')
-            months_ls = data.get('months_ls', [newStart])
-            increment = data.get('increment', 10000)
+        j = get_btc_txn_backlog(
+            month,
+            bg_client,
+            getChClient(),
+            db,
+            job_id,
+            increment
+        )
+        return json.dumps(j), 200, {'ContentType':'application/json'}
 
-            #insert job
-            jobDetails = {
-                "type": "backlogBtcTxns",
-                "start": months_ls[0],
-                "end": months_ls[-1]
-            }
-            jobRow = {
-                'type': jobDetails['type'],
-                'status': 'running',
-                'details': json.dumps(jobDetails)
-            }
-            jobRow = insertJob(db.engine, jobRow)
-
-            #call job again to run in parallel
-            url = "http://localhost:5000/run_job"
-            payload = {"type": "backlogBtcTxns"}
-            headers = {"content-type": "application/json"}
-            try:
-                response = requests.request("POST", url, json=payload, headers=headers, timeout=5)
-            except Exception as e: 
-                print(e)
-                return {'ok':False}
-
-            try:
-                j = get_btc_txn_backlog(
-                    months_ls,
-                    bg_client,
-                    getChClient(),
-                    db,
-                    increment
-                )
-                #mark job complete, successs
-                updateJobRow = {
-                    'id': jobRow['row']['id'],
-                    'status': 'success',
-                    'details': json.dumps(jobDetails)
-                }
-                updateJob(db.engine, updateJobRow)
-                logger.info(f"job done. {jobRow}")
-                return {'ok': True}
-
-            except Exception as e:
-                #if job fails mark as failed
-                # print(e)
-                # logger.info(f'failed getting backlog data at {month}, row {row_ct}:', e)
-                # updateJobRow = {
-                #     'id': jobRow['row']['id'],
-                #     'status': 'failed',
-                #     'details': json.dumps(jobDetails)
-                # }
-                # updateJob(db.engine, updateJobRow)
-                return {'ok':False}
-        else:
-            return {'ok': True, 'status': f"All caught up for {months_ls}!".format(months_ls = months_ls)}
-        # insertJob(min=minFromPg-20, max=minFromPg-1)
-        # load_btc(min=minFromPg-20, max=minFromPg-1)
-        # updateJob(asdfl jsdkf)
-        # if minFromPg-20 > 0:
-        #     url = "https://localhost:500/run_job"
-        #     payload = {"job": "missingLogs"}
-        #     headers = {"content-type": "application/json"}
-        #     try:
-        #         response = requests.request("POST", url, json=payload, headers=headers, timeout=1)
-        #     except requests.exceptions.ReadTimeout: 
-        #         pass
+    if data.get('type') == 'testJob':
+        logger.info(f'run_job is testJob!!!!!!!!!!!: {data}')
+        updateJobRow = {
+            'id': data['id'],
+            'status': 'success'
+        }
+        pgu.updateJobStatus(db.engine, updateJobRow)
+        j = {'ok': True, 'data': updateJobRow}
         return json.dumps(j), 200, {'ContentType':'application/json'}
     j = {'ok': True, 'data': 'running'}
     return json.dumps(j), 200, {'ContentType':'application/json'}

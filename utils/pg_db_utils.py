@@ -15,6 +15,23 @@ def insertJob(engine, d):
             print('insertJob error: ', e)
             return {'ok': False, 'error': e}
 
+def updateJobStatus(engine, d):
+    with engine.connect() as con:
+        try:
+            sql = '''
+            UPDATE public.jobs
+            SET "status" = :status, 
+            "updated_at" = now()
+            WHERE id = :id
+            RETURNING id
+            '''
+            statement = sqlalchemy.sql.text(sql)
+            row = con.execute(statement, **d)
+            return {'ok': True, 'row': row.fetchone()}
+        except Exception as e:
+            print('updateJob error: ', e)
+            return {'ok': False, 'error': e}
+
 def updateJob(engine, d):
     with engine.connect() as con:
         try:
@@ -47,6 +64,49 @@ def getJobSummary(engine, t):
         statement = sqlalchemy.sql.text(sql)
         res = con.execute(statement).fetchone()
         return res
+
+def getPendingJobs(engine):
+    with engine.connect() as con:
+        sql = f'''
+        select 
+        j."type", 
+        min((j.details ->> 'maxRunning')::int) as max_running,
+        sum(case when j."status" = 'running' then 1 else 0 end) as running,
+        sum(case when j."status" = 'pending' then 1 else 0 end) as pending,
+        count(1) as total
+        from jobs as j
+        -- where j."status" = 'pending'
+        where true
+        -- and j."type" = 'testJob'
+        group by 1
+        '''
+        statement = sqlalchemy.sql.text(sql)
+        rows = con.execute(statement)
+        rows = rows.mappings().all()
+        jobs = []
+        for row in rows:
+            capacity = 10
+            if row['max_running']:
+                capacity = row['max_running'] - row['running']
+            if capacity > 0:
+                sql = f'''
+                select 
+                j.id,
+                j.details
+                from jobs as j
+                where j."type" = '{row['type']}'
+                and j."status" = 'pending'
+                order by id desc
+                limit {capacity}
+                '''
+                statement = sqlalchemy.sql.text(sql)
+                temp_jobs = con.execute(statement)
+                temp_jobs = temp_jobs.mappings().all()
+                _ = [jobs.append(dict(j)) for j in temp_jobs]
+        print(f"getPendingJobs, num of jobs: {len(jobs)}")
+        if len(jobs) > 0:
+            print(f"getPendingJobs, first job: {jobs[0]}")
+        return jobs
 
 def getDoneMaxJob(engine, jobId):
     with engine.connect() as con:

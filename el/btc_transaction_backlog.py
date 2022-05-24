@@ -9,7 +9,7 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
 import flask
-from utils.pg_db_utils import insertJob, updateJob, getJobSummary, getDoneMaxJob
+import utils.pg_db_utils as pgu
 
 txn_query_sql = (
     '''
@@ -164,7 +164,7 @@ def get_btc_txn_backlog(month, bg_client, clickhouse_client, pg_db, job_id, incr
             'id': job_id,
             'status': 'success',
         }
-        updateJob(pg_db.engine, updateJobRow)
+        pgu.updateJobStatus(pg_db.engine, updateJobRow)
         logger.info(f"job done. {updateJobRow}")
         return {'ok': True}
     except Exception as e:
@@ -174,5 +174,5 @@ def get_btc_txn_backlog(month, bg_client, clickhouse_client, pg_db, job_id, incr
             'id': job_id,
             'status': 'failed',
         }
-        updateJob(pg_db.engine, updateJobRow)
+        pgu.updateJobStatus(pg_db.engine, updateJobRow)
         return {'ok':False}

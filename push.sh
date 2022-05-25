@@ -1,8 +1,10 @@
 set -x
-source .env
+# source .env
 
 export DOCKER_TAG=luabase-py
 export PROJECT_ID=luabase
+export WORKERS=1
+export THREADS=8
 
 git add .
 git status
@@ -24,13 +26,10 @@ gcloud beta run services update ${DOCKER_TAG} \
     --image us.gcr.io/${PROJECT_ID}/${DOCKER_TAG} \
     --platform managed \
     --min-instances 10 \
-    --memory 2Gi \
+    --memory 16Gi \
     --timeout 3600 \
     --account mike@luabase.com \
     --project ${PROJECT_ID} \
-    --set-env-vars "SCRAPING_BEE_API_KEY=$SCRAPING_BEE_API_KEY" \
-    --set-env-vars "CH_ADMIN_PASSWORD=$CH_ADMIN_PASSWORD" \
-    --set-env-vars "SUPABASE_SQLALCHEMY_DATABASE_URI=$SUPABASE_SQLALCHEMY_DATABASE_URI" \
     --set-env-vars "WORKERS=$WORKERS" \
     --set-env-vars "THREADS=$THREADS" \
     --region us-central1 

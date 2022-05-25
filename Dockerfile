@@ -21,7 +21,6 @@ ENV PYTHONUNBUFFERED True
 # Install production dependencies.
 # RUN pip install --no-cache-dir -r requirements.txt
 
-COPY .env /app/
 COPY requirements.txt /app/
 # --no-cache-dir
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip pip3 --default-timeout=600 install -r /app/requirements.txt 

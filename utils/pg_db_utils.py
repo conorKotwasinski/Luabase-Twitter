@@ -86,6 +86,8 @@ def getPendingJobs(engine):
         jobs = []
         for row in rows:
             capacity = 10
+            # TODO: make order configurable from details
+            order = row.get('order', 'asc')
             if row['max_running']:
                 capacity = row['max_running'] - row['running']
             if capacity > 0:
@@ -96,7 +98,7 @@ def getPendingJobs(engine):
                 from jobs as j
                 where j."type" = '{row['type']}'
                 and j."status" = 'pending'
-                order by id desc
+                order by id {order}
                 limit {capacity}
                 '''
                 statement = sqlalchemy.sql.text(sql)

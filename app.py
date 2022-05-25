@@ -7,7 +7,11 @@ import sys
 import uuid
 from flask_cors import CORS 
 from flask_sqlalchemy import SQLAlchemy
+from pyparsing import dbl_slash_comment
 import sqlalchemy
+from datetime import datetime, timedelta
+from dateutil.relativedelta import *
+from google.cloud import bigquery
 
 import utils.lua_utils as lu
 test_from_cloud_run = lu.get_secret('test_from_cloud_run')
@@ -25,6 +29,7 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from utils.pg_db_utils import insertJob, updateJob, getJobSummary, getPendingJobs, getDoneMaxJob, getMaxJob
 import utils.pg_db_utils as pgu
 from el.btc_etl import extract_transform_load_btc
+from el.btc_transaction_backlog import get_btc_txn_backlog
 
 sentry_sdk.init(
     dsn="https://5fce4fd9b9404cbe978b509a2465f027@o1176187.ingest.sentry.io/6325459",
@@ -64,7 +69,7 @@ SQLALCHEMY_ENGINE_OPTIONS = {
 }
 
 db = SQLAlchemy(app, session_options=SQLALCHEMY_SESSION_OPTIONS, engine_options=SQLALCHEMY_ENGINE_OPTIONS)
-
+bg_client = bigquery.Client()
 
 
 def send_request(url):
@@ -285,6 +290,7 @@ def get_jobs():
         pgu.updateJobStatus(db.engine, updateJobRow)
         # send job to cloud run with post request
         # url = "https://luabase-mjr-py.ngrok.io/run_job"
+        # url = "http://localhost:5000/run_job"
         url = "https://luabase-py-msgn5tdnsa-uc.a.run.app/run_job"
         payload = job['details']
         payload['id'] = job['id']
@@ -321,6 +327,22 @@ def run_job():
             end_block
             )
         return json.dumps(j), 200, {'ContentType':'application/json'}
+
+    if data.get('type') == 'backlogBtcTxns':
+        month = data.get('month')
+        increment = data.get('increment', 10000)
+        job_id = data.get('id')
+
+        j = get_btc_txn_backlog(
+            month,
+            bg_client,
+            getChClient(),
+            db,
+            job_id,
+            increment
+        )
+        return json.dumps(j), 200, {'ContentType':'application/json'}
+
     if data.get('type') == 'testJob':
         logger.info(f'run_job is testJob!!!!!!!!!!!: {data}')
         updateJobRow = {

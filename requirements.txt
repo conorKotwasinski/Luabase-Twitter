@@ -8,6 +8,8 @@ Flask-Cors
 Flask-SQLAlchemy
 requests
 sentry-sdk[flask]
+python-dateutil
+google-cloud-bigquery
 git+https://github.com/swang2016/bitcoin-etl#egg=bitcoin-etl
 
 # google shit

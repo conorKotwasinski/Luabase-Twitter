@@ -13,6 +13,10 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 from google.cloud import bigquery
 
+import google.cloud.logging
+client = google.cloud.logging.Client()
+client.setup_logging()
+
 import utils.lua_utils as lu
 test_from_cloud_run = lu.get_secret('test_from_cloud_run')
 print('test_from_cloud_run: ', test_from_cloud_run)

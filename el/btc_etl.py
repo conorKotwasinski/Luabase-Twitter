@@ -445,11 +445,11 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
         'details': json.dumps(job_details)
     }
     job_row = insertJob(pg_db.engine, job_row)
-    logger.info(f'getting bitcoin data... ${job_row}')
+    logger.info(f'getting bitcoin data... ${job_row}', extra={'type':'getBtcEtl', 'id':job_row['row']['id']})
     try:
         new_data = get_new_btc_data(clickhouse_client, node_uri, start_block, end_block, target)
     except Exception as e:
-        logger.info(f'failed getting bitcoin data... ${job_row}:', e)
+        logger.info(f'failed getting bitcoin data... ${job_row}:', extra={'type':'getBtcEtl', 'id':job_row['row']['id'], 'error':e})
         updateJobRow = {
             'id': job_row['row']['id'],
             'status': 'failed',
@@ -458,14 +458,14 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
         updateJob(pg_db.engine, updateJobRow)
         return {'ok':False}
 
-    logger.info(f'completed getting bitcoin data... ${job_row}')
+    logger.info(f'completed getting bitcoin data... ${job_row}', extra={'type':'getBtcEtl', 'id':job_row['row']['id']})
 
     ######transform and load btc data########## 
-    logger.info(f'transforming and loading new bitcoin data... ${job_row}')
+    logger.info(f'transforming and loading new bitcoin data... ${job_row}', extra={'type':'getBtcEtl', 'id':job_row['row']['id']})
     try:
         transform_load_btc_data(new_data, clickhouse_client)
     except Exception as e:
-        logger.info(f'failed loading bitcoin data... ${job_row}:', e)
+        logger.info(f'failed loading bitcoin data... ${job_row}:', extra={'type':'getBtcEtl', 'id':job_row['row']['id'], 'error':e})
         updateJobRow = {
             'id': job_row['row']['id'],
             'status': 'failed',
@@ -480,5 +480,5 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
         'details': json.dumps(job_details)
     }
     updateJob(pg_db.engine, updateJobRow)
-    logger.info(f"job done. {job_row}")
+    logger.info(f"job done. {job_row}", extra={'type':'getBtcEtl', 'id':job_row['row']['id']})
     return {'ok': True}

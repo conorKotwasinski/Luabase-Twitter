@@ -102,7 +102,7 @@ def get_btc_txn_backlog(month, bg_client, clickhouse_client, pg_db, job_id, incr
         query_job = bg_client.query(query)     
         query_result = query_job.result()
 
-        logger.info(f"starting backlog for {month} with total row count of {query_result.total_rows}")
+        logger.info(f"starting backlog for {month} with total row count of {query_result.total_rows}", extra={"type": 'backlogBtcTxns', 'month':month})
 
         row_ct = 1
         transactions_ls = []
@@ -153,7 +153,7 @@ def get_btc_txn_backlog(month, bg_client, clickhouse_client, pg_db, job_id, incr
                 clickhouse_client.insert_dataframe(txn_insert_sql, transactions_df)
                 clickhouse_client.insert_dataframe(inputs_insert_sql, inputs_df)
                 clickhouse_client.insert_dataframe(outputs_insert_sql, outputs_df)
-                logger.info(f"loaded data up to {row_ct} in query result for {month}")
+                logger.info(f"loaded data up to {row_ct} in query result for {month}", extra = {"type": 'backlogBtcTxns', 'month':month, 'row_ct':row_ct})
 
                 transactions_ls = []
                 inputs_ls = []
@@ -169,7 +169,7 @@ def get_btc_txn_backlog(month, bg_client, clickhouse_client, pg_db, job_id, incr
         return {'ok': True}
     except Exception as e:
         #if job fails mark as failed
-        logger.info(f'failed getting backlog data at {month}, row {row_ct}:', e)
+        logger.info(f'failed getting backlog data at {month}, row {row_ct}:', extra = {"type": 'backlogBtcTxns', 'month':month, 'row_ct':row_ct, 'error':e})
         updateJobRow = {
             'id': job_id,
             'status': 'failed',

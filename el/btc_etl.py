@@ -445,11 +445,13 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
         'details': json.dumps(job_details)
     }
     job_row = insertJob(pg_db.engine, job_row)
-    logger.info(f'getting bitcoin data... ${job_row}', extra={'type':'getBtcEtl', 'id':job_row['row']['id']})
+    log_details = {'type':'getBtcEtl', 'id':job_row['row']['id']}
+    logger.info(f'getting bitcoin data... ${job_row}', extra={"json_fields":log_details})
     try:
         new_data = get_new_btc_data(clickhouse_client, node_uri, start_block, end_block, target)
     except Exception as e:
-        logger.info(f'failed getting bitcoin data... ${job_row}:', extra={'type':'getBtcEtl', 'id':job_row['row']['id'], 'error':e})
+        log_details['error'] = e
+        logger.info(f'failed getting bitcoin data... ${job_row}:', extra={"json_fields":log_details})
         updateJobRow = {
             'id': job_row['row']['id'],
             'status': 'failed',
@@ -458,14 +460,15 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
         updateJob(pg_db.engine, updateJobRow)
         return {'ok':False}
 
-    logger.info(f'completed getting bitcoin data... ${job_row}', extra={'type':'getBtcEtl', 'id':job_row['row']['id']})
+    logger.info(f'completed getting bitcoin data... ${job_row}', extra={"json_fields":log_details})
 
     ######transform and load btc data########## 
-    logger.info(f'transforming and loading new bitcoin data... ${job_row}', extra={'type':'getBtcEtl', 'id':job_row['row']['id']})
+    logger.info(f'transforming and loading new bitcoin data... ${job_row}', extra={"json_fields":log_details})
     try:
         transform_load_btc_data(new_data, clickhouse_client)
     except Exception as e:
-        logger.info(f'failed loading bitcoin data... ${job_row}:', extra={'type':'getBtcEtl', 'id':job_row['row']['id'], 'error':e})
+        log_details['error'] = e
+        logger.info(f'failed loading bitcoin data... ${job_row}:', extra={"json_fields":log_details})
         updateJobRow = {
             'id': job_row['row']['id'],
             'status': 'failed',
@@ -480,5 +483,5 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
         'details': json.dumps(job_details)
     }
     updateJob(pg_db.engine, updateJobRow)
-    logger.info(f"job done. {job_row}", extra={'type':'getBtcEtl', 'id':job_row['row']['id']})
+    logger.info(f"job done. {job_row}", extra={"json_fields":log_details})
     return {'ok': True}

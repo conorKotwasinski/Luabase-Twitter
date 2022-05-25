@@ -239,10 +239,16 @@ def txn_json_to_df(transactions_json, transaction_inputs, transaction_outputs):
     del transactions_df['inputs']
     del transactions_df['outputs']
 
-    transaction_inputs_df = pd.DataFrame(transaction_inputs)
-    transaction_inputs_df = transaction_inputs_df.rename(columns = {'index':'input_index'})
-    transaction_inputs_df['block_timestamp'] = pd.to_datetime(transaction_inputs_df.block_timestamp, unit = 's', origin = 'unix')
-
+    if len(transaction_inputs) > 0:
+        transaction_inputs_df = pd.DataFrame(transaction_inputs)
+        transaction_inputs_df = transaction_inputs_df.rename(columns = {'index':'input_index'})
+        transaction_inputs_df['block_timestamp'] = pd.to_datetime(transaction_inputs_df.block_timestamp, unit = 's', origin = 'unix')
+    else:
+        transaction_inputs_df = pd.DataFrame(columns = [
+            'input_index', 'spent_transaction_hash', 'spent_output_index', 'script_asm',
+            'script_hex', 'sequence', 'required_signatures', 'type', 'addresses', 'value',
+            'transaction_hash', 'block_number','block_hash', 'block_timestamp'
+        ])
     transaction_outputs_df = pd.DataFrame(transaction_outputs)
     transaction_outputs_df = transaction_outputs_df.rename(columns = {'index':'output_index'})
     transaction_outputs_df['block_timestamp'] = pd.to_datetime(transaction_outputs_df.block_timestamp, unit = 's', origin = 'unix')
@@ -396,7 +402,7 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
     #####set start and end blocks######
     #get max block+1 in db if start block is null
     if start_block == None:
-        max_job = getDoneMaxJob(pg_db.engine, job_summary['max_id'])
+        max_job = getDoneMaxJob(pg_db.engine, 'getBtcEtl')
         start_block = max_job['details'].get('end', -1) + 1
     #     start_block = get_max_btc_db_block(clickhouse_client, target)
     #     start_block += 1

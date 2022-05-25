@@ -154,7 +154,7 @@ def get_btc_txn_backlog(month, bg_client, clickhouse_client, pg_db, job_id, incr
                 clickhouse_client.insert_dataframe(txn_insert_sql, transactions_df)
                 clickhouse_client.insert_dataframe(inputs_insert_sql, inputs_df)
                 clickhouse_client.insert_dataframe(outputs_insert_sql, outputs_df)
-                log_details['roc_ct'] = row_ct
+                log_details['row_ct'] = row_ct
                 logger.info(f"loaded data up to {row_ct} in query result for {month}", extra = {"json_fields":log_details})
 
                 transactions_ls = []

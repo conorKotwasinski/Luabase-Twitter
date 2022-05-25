@@ -13,9 +13,13 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 from google.cloud import bigquery
 
+RUNNING_LOCAL = str(os.getenv('RUNNING_LOCAL', '0')) == '1'
+print('RUNNING_LOCAL: ', RUNNING_LOCAL)
+
 import google.cloud.logging
-client = google.cloud.logging.Client()
-client.setup_logging()
+if not RUNNING_LOCAL:
+    gcp_loggging_client = google.cloud.logging.Client()
+    gcp_loggging_client.setup_logging()
 
 import utils.lua_utils as lu
 test_from_cloud_run = lu.get_secret('test_from_cloud_run')

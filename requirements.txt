@@ -10,6 +10,7 @@ requests
 sentry-sdk[flask]
 python-dateutil
 google-cloud-bigquery
+google-cloud-logging>=3.0.0
 git+https://github.com/swang2016/bitcoin-etl#egg=bitcoin-etl
 
 # google shit

@@ -13,6 +13,10 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 from google.cloud import bigquery
 
+import google.cloud.logging
+client = google.cloud.logging.Client()
+client.setup_logging()
+
 import utils.lua_utils as lu
 test_from_cloud_run = lu.get_secret('test_from_cloud_run')
 print('test_from_cloud_run: ', test_from_cloud_run)
@@ -250,6 +254,7 @@ def hello_world():
 def ping():
     name = os.environ.get('NAME', 'World')
     j = {'ok': True, 'name': name}
+    logger.info(f'ping...', extra={"json_fields": j})
     return json.dumps(j), 200, {'ContentType':'application/json'}
 
 @app.route('/test_secret', methods=["GET", "POST"])
@@ -310,7 +315,7 @@ def get_jobs():
 @app.route('/run_job', methods=["GET", "POST"])
 def run_job():
     data = flask.request.get_json()
-    logger.info(f'run_job: {data}')
+    logger.info(f'run_job...', extra={"json_fields": data})
     if data.get('type') == 'getEthNameTag':
         j = getEthNameTags(data)
         return json.dumps(j), 200, {'ContentType':'application/json'}

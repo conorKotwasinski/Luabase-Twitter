@@ -447,7 +447,7 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
     logger.info(f'transforming and loading new bitcoin data... ${job_row}')
     try:
         transform_load_btc_data(new_data, clickhouse_client)
-    except:
+    except Exception as e:
         logger.info(f'failed loading bitcoin data... ${job_row}:', e)
         updateJobRow = {
             'id': job_row['row']['id'],

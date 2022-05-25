@@ -296,7 +296,10 @@ def get_jobs():
         payload['id'] = job['id']
         headers = {"content-type": "application/json"}
         # try:
-        response = requests.request("POST", url, json=payload, headers=headers)
+        try:
+            requests.request("POST", url, json=payload, headers=headers, timeout=2)
+        except requests.exceptions.ReadTimeout: 
+            pass
         logger.info(f'get_jobs to run_job: {payload}')
         # except requests.exceptions.ReadTimeout: 
         #     pass

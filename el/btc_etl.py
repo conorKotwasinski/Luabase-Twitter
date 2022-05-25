@@ -404,10 +404,21 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
 
     #get max block in blockchain and subtract lag if end block is null
     if end_block == None:
-        bitcoin_rpc=ThreadLocalProxy(lambda: BitcoinRpc(node_uri))
-        end_block = bitcoin_rpc.getblockcount()
-        end_block -= lag
-        end_block = int(end_block)
+        try_counter = 1
+        data_pull_succeeded = False
+
+        while try_counter <= 10 and data_pull_succeeded == False:
+            try:
+                bitcoin_rpc=ThreadLocalProxy(lambda: BitcoinRpc(node_uri))
+                end_block = bitcoin_rpc.getblockcount()
+                end_block -= lag
+                end_block = int(end_block)
+                data_pull_succeeded = True
+            except Exception as e:
+                logger.info(f'failed getting max block number from quicknode on try ${try_counter}:', e)
+                try_counter += 1
+        if try_counter > 10:
+            raise AttributeError('failed to get max block number from quicknode after 10 tries')
 
     #check if blockchain max block > start_block 
     if end_block < start_block:

@@ -96,7 +96,7 @@ def getPendingJobs(engine):
                 from jobs as j
                 where j."type" = '{row['type']}'
                 and j."status" = 'pending'
-                order by id desc
+                order by id asc
                 limit {capacity}
                 '''
                 statement = sqlalchemy.sql.text(sql)

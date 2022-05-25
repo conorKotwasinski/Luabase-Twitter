@@ -110,13 +110,14 @@ def getPendingJobs(engine):
             print(f"getPendingJobs, first job: {jobs[0]}")
         return jobs
 
-def getDoneMaxJob(engine, jobId):
+def getDoneMaxJob(engine, type):
     with engine.connect() as con:
         sql = f'''
         select *
         from "public".jobs as j
-        where j.id = {jobId}
+        where j.type = '{type}'
         and status = 'success'
+        order by id desc
         '''
         statement = sqlalchemy.sql.text(sql)
         res = con.execute(statement).fetchone()

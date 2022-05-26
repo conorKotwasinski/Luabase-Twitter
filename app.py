@@ -369,7 +369,7 @@ def run_job():
             'bg_client':bg_client,
             'clickhouse_client':getChClient(),
             'pg_db':db,
-            'job_id':data.get('job_id'),
+            'id':data.get('id'),
             'increment':data.get('increment', 10000)
         }
 
@@ -380,9 +380,9 @@ def run_job():
         log_details = {
             'type':'backlogBtcTxns',
             'month':d['month'],
-            'job_id':d['job_id']
+            'id':d['id']
         }
-        logger.info(f'starting backlogBtcTxns job with id {d["job_id"]} and month {d["month"]}', extra={'json_fields':log_details})
+        logger.info(f'starting backlogBtcTxns job with id {d["id"]} and month {d["month"]}', extra={'json_fields':log_details})
         return json.dumps(log_details), 200, {'ContentType':'application/json'}
 
     if data.get('type') == 'testJob':

@@ -101,7 +101,7 @@ def get_btc_txn_backlog(data):
     bg_client = data['bg_client']
     clickhouse_client = data['clickhouse_client']
     pg_db = data['pg_db']
-    job_id = data['job_id']
+    id = data['id']
     increment = data['increment']
     try:
         query = txn_query_sql.format(month = month)
@@ -169,7 +169,7 @@ def get_btc_txn_backlog(data):
             row_ct += 1
         # mark job complete, successs
         updateJobRow = {
-            'id': job_id,
+            'id': id,
             'status': 'success',
         }
         pgu.updateJobStatus(pg_db.engine, updateJobRow)
@@ -181,7 +181,7 @@ def get_btc_txn_backlog(data):
         log_details['error'] = e
         logger.info(f'failed getting backlog data at {month}, row {row_ct}:', extra = {"json_fields":log_details})
         updateJobRow = {
-            'id': job_id,
+            'id': id,
             'status': 'failed',
         }
         pgu.updateJobStatus(pg_db.engine, updateJobRow)

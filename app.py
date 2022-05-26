@@ -363,19 +363,27 @@ def run_job():
         return json.dumps(j), 200, {'ContentType':'application/json'}
 
     if data.get('type') == 'backlogBtcTxns':
-        month = data.get('month')
-        increment = data.get('increment', 10000)
-        job_id = data.get('id')
 
-        j = get_btc_txn_backlog(
-            month,
-            bg_client,
-            getChClient(),
-            db,
-            job_id,
-            increment
-        )
-        return json.dumps(j), 200, {'ContentType':'application/json'}
+        d = {
+            'month':data.get('month'),
+            'bg_client':bg_client,
+            'clickhouse_client':getChClient(),
+            'pg_db':db,
+            'id':data.get('id'),
+            'increment':data.get('increment', 10000)
+        }
+
+        thread = Thread(target = get_btc_txn_backlog, args = (d, ))
+
+        thread.daemon = True
+        thread.start()
+        log_details = {
+            'type':'backlogBtcTxns',
+            'month':d['month'],
+            'id':d['id']
+        }
+        logger.info(f'starting backlogBtcTxns job with id {d["id"]} and month {d["month"]}', extra={'json_fields':log_details})
+        return json.dumps(log_details), 200, {'ContentType':'application/json'}
 
     if data.get('type') == 'testJob':
         logger.info(f'run_job is testJob!!!!!!!!!!!: {data}')

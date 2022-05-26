@@ -96,6 +96,7 @@ INSERT INTO bitcoin.transaction_outputs_raw
     ) VALUES
     '''
 def get_btc_txn_backlog(data):
+    #data is a dictionary that accepts the following arguments below:
     month = data['month']
     bg_client = data['bg_client']
     clickhouse_client = data['clickhouse_client']

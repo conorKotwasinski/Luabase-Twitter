@@ -42,15 +42,16 @@ import utils.pg_db_utils as pgu
 from el.btc_etl import extract_transform_load_btc
 from el.btc_transaction_backlog import get_btc_txn_backlog
 
-sentry_sdk.init(
-    dsn="https://5fce4fd9b9404cbe978b509a2465f027@o1176187.ingest.sentry.io/6325459",
-    integrations=[FlaskIntegration()],
+if not RUNNING_LOCAL:
+    sentry_sdk.init(
+        dsn="https://5fce4fd9b9404cbe978b509a2465f027@o1176187.ingest.sentry.io/6325459",
+        integrations=[FlaskIntegration()],
 
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    # We recommend adjusting this value in production.
-    traces_sample_rate=0.1
-)
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for performance monitoring.
+        # We recommend adjusting this value in production.
+        traces_sample_rate=0.1
+    )
 
 SCRAPING_BEE_API_KEY = lu.get_secret('SCRAPING_BEE_API_KEY')
 CH_ADMIN_PASSWORD = lu.get_secret('CH_ADMIN_PASSWORD')

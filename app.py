@@ -5,6 +5,8 @@ import json
 import os
 import sys
 import uuid
+import time
+from threading import Thread
 from flask_cors import CORS 
 from flask_sqlalchemy import SQLAlchemy
 from pyparsing import dbl_slash_comment
@@ -12,6 +14,7 @@ import sqlalchemy
 from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 from google.cloud import bigquery
+
 
 RUNNING_LOCAL = str(os.getenv('RUNNING_LOCAL', '0')) == '1'
 print('RUNNING_LOCAL: ', RUNNING_LOCAL)
@@ -253,6 +256,24 @@ def getEthNameTags(data):
 def hello_world():
     name = os.environ.get("NAME", "World")
     return "Hello {}!".format(name)
+
+@app.route('/test_threads', methods=["GET", "POST"])
+def test_threads():
+    def threaded_task(data):
+        for i in range(data['duration']):
+            # print("Working... {}/{}".format(i + 1, data['duration']))
+            data['i'] = i
+            logger.info(f'test_threads run {i}', extra={"json_fields": data})
+            time.sleep(1)
+    d = {
+        'duration': 10,
+        'type': 'test_threads'
+    }
+    thread = Thread(target=threaded_task, args=(d,))
+    thread.daemon = True
+    thread.start()
+    logger.info(f'test_threads...', extra={"json_fields": d})
+    return json.dumps(d), 200, {'ContentType':'application/json'}
 
 @app.route('/ping', methods=["GET", "POST"])
 def ping():

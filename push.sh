@@ -28,6 +28,7 @@ gcloud beta run services update ${DOCKER_TAG} \
     --min-instances 10 \
     --memory 16Gi \
     --timeout 3600 \
+    --no-cpu-throttling \
     --account mike@luabase.com \
     --project ${PROJECT_ID} \
     --set-env-vars "WORKERS=$WORKERS" \

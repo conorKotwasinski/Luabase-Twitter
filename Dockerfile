@@ -7,6 +7,7 @@ FROM python:3.10
 
 # Allow statements and log messages to immediately appear in the Knative logs
 ENV PYTHONUNBUFFERED True
+# ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION cpp
 
 # Copy local code to the container image.
 # ENV APP_HOME /app

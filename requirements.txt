@@ -9,6 +9,7 @@ Flask-SQLAlchemy
 requests
 sentry-sdk[flask]
 python-dateutil
+protobuf==3.20.1
 google-cloud-bigquery
 google-cloud-logging>=3.0.0
 git+https://github.com/swang2016/bitcoin-etl#egg=bitcoin-etl

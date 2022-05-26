@@ -367,14 +367,25 @@ def run_job():
         increment = data.get('increment', 10000)
         job_id = data.get('id')
 
-        j = get_btc_txn_backlog(
-            month,
-            bg_client,
-            getChClient(),
-            db,
-            job_id,
-            increment
+        thread = Thread(
+            target=get_btc_txn_backlog(
+                month,
+                bg_client,
+                getChClient(),
+                db,
+                job_id,
+                increment
+            )
         )
+
+        thread.daemon = True
+        thread.start()
+        log_details = {
+            'type':'backlogBtcTxns',
+            'month':month,
+            'job_id':job_id
+        }
+        logger.info(f'starting backlogBtcTxns job with id {job_id} and month {month}', extra={'json_fields':log_details})
         return json.dumps(j), 200, {'ContentType':'application/json'}
 
     if data.get('type') == 'testJob':

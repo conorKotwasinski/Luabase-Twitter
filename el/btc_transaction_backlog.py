@@ -95,8 +95,13 @@ INSERT INTO bitcoin.transaction_outputs_raw
         block_timestamp 
     ) VALUES
     '''
-def get_btc_txn_backlog(month, bg_client, clickhouse_client, pg_db, job_id, increment = 10000):
-
+def get_btc_txn_backlog(data):
+    month = data['month']
+    bg_client = data['bg_client']
+    clickhouse_client = data['clickhouse_client']
+    pg_db = data['pg_db']
+    job_id = data['job_id']
+    increment = data['increment']
     try:
         query = txn_query_sql.format(month = month)
         query_job = bg_client.query(query)     

@@ -259,14 +259,15 @@ def hello_world():
 
 @app.route('/test_threads', methods=["GET", "POST"])
 def test_threads():
+    data = flask.request.get_json()
     def threaded_task(data):
         for i in range(data['duration']):
             # print("Working... {}/{}".format(i + 1, data['duration']))
             data['i'] = i
             logger.info(f'test_threads run {i}', extra={"json_fields": data})
-            time.sleep(1)
+            time.sleep(60)
     d = {
-        'duration': 10,
+        'duration': 100,
         'type': 'test_threads'
     }
     thread = Thread(target=threaded_task, args=(d,))

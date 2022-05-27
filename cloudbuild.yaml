@@ -1,0 +1,37 @@
+steps:
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/luabase/luabase-py', '.']
+# Push the container image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/luabase/luabase-py']
+# Deploy container image to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: [
+    'run', 
+    'deploy', 'luabase-py-test', 
+    '--image', 'gcr.io/luabase/luabase-py', 
+    '--region', 'us-central1',
+    '--set-env-vars', 'WORKERS=1',
+    '--set-env-vars', 'THREADS=8',
+    ]
+images:
+- gcr.io/luabase/luabase-py
+
+# export DOCKER_TAG=luabase-py
+# export PROJECT_ID=luabase
+# export WORKERS=1
+# export THREADS=8
+# gcloud beta run services update ${DOCKER_TAG} \
+#     --image us.gcr.io/${PROJECT_ID}/${DOCKER_TAG} \
+#     --platform managed \
+#     --min-instances 10 \
+#     --memory 16Gi \
+#     --timeout 3600 \
+#     --no-cpu-throttling \
+#     --account mike@luabase.com \
+#     --project ${PROJECT_ID} \
+#     --set-env-vars "WORKERS=$WORKERS" \
+#     --set-env-vars "THREADS=$THREADS" \
+#     --region us-central1 

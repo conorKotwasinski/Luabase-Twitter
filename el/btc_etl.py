@@ -137,7 +137,7 @@ def get_new_btc_data(clickhouse_client, uri, start_block, end_block, target = 'b
             except Exception as e:
                 try_counter += 1
                 print(e)
-                logger.info(f'failed getting block data from quicknode on try {try_counter}')
+                logger.info(f'failed getting transaction data from quicknode on try {try_counter}')
         if try_counter > 10:
             raise AttributeError('failed to get new data from quicknode after 10 tries')
 
@@ -151,7 +151,7 @@ def get_new_btc_data(clickhouse_client, uri, start_block, end_block, target = 'b
             except Exception as e:
                 try_counter += 1
                 print(e)
-                logger.info(f'failed getting block data from quicknode on try {try_counter}')
+                logger.info(f'failed getting enriched transaction data from quicknode on try {try_counter}')
         if try_counter > 10:
             raise AttributeError('failed to get new data from quicknode after 10 tries')
         else:
@@ -168,7 +168,7 @@ def get_new_btc_data(clickhouse_client, uri, start_block, end_block, target = 'b
             except Exception as e:
                 try_counter += 1
                 print(e)
-                logger.info(f'failed getting block data from quicknode on try {try_counter}')                
+                logger.info(f'failed getting block and transaction data from quicknode on try {try_counter}')                
         if try_counter > 10:
             raise AttributeError('failed to get new data from quicknode after 10 tries')
 
@@ -182,7 +182,7 @@ def get_new_btc_data(clickhouse_client, uri, start_block, end_block, target = 'b
             except Exception as e:
                 try_counter += 1
                 print(e)
-                logger.info(f'failed getting block data from quicknode on try {try_counter}')
+                logger.info(f'failed getting enriched transaction data from quicknode on try {try_counter}')
         if try_counter > 10:
             raise AttributeError('failed to get new data from quicknode after 10 tries')
         else:

@@ -450,7 +450,7 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
     try:
         new_data = get_new_btc_data(clickhouse_client, node_uri, start_block, end_block, target)
     except Exception as e:
-        log_details['error'] = e
+        log_details['error'] = str(e)
         logger.info(f'failed getting bitcoin data... ${job_row}:', extra={"json_fields":log_details})
         updateJobRow = {
             'id': job_row['row']['id'],
@@ -467,7 +467,7 @@ def extract_transform_load_btc(clickhouse_client, node_uri, pg_db, target = 'bot
     try:
         transform_load_btc_data(new_data, clickhouse_client)
     except Exception as e:
-        log_details['error'] = e
+        log_details['error'] = str(e)
         logger.info(f'failed loading bitcoin data... ${job_row}:', extra={"json_fields":log_details})
         updateJobRow = {
             'id': job_row['row']['id'],

@@ -178,7 +178,7 @@ def get_btc_txn_backlog(data):
         return {'ok': True}
     except Exception as e:
         #if job fails mark as failed
-        log_details['error'] = e
+        log_details['error'] = str(e)
         logger.info(f'failed getting backlog data at {month}, row {row_ct}:', extra = {"json_fields":log_details})
         updateJobRow = {
             'id': id,

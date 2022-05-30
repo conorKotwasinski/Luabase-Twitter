@@ -21,6 +21,7 @@ docs/_build/
 .ipynb
 dev_env/
 dev_notebooks/
+.ipynb_checkpoints/
 
 # Coverage reports
 htmlcov/

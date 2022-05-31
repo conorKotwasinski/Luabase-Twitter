@@ -128,8 +128,8 @@ class EthInMemoryAdapter:
             enriched_contracts + \
             enriched_tokens
 
-        self.calculate_item_ids(all_items)
-        self.calculate_item_timestamps(all_items)
+        # self.calculate_item_ids(all_items)
+        # self.calculate_item_timestamps(all_items)
 
         all_items = {
             'blocks':enriched_blocks,

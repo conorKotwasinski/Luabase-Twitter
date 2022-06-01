@@ -98,7 +98,7 @@ def send_request(url):
     print('Response HTTP Status Code: ', response.status_code)
     return response
 
-def getChClient():
+def getChClient(use_numpy = True):
     client = Client('lua-2.luabase.altinity.cloud',
         user='admin',
         password=CH_ADMIN_PASSWORD,
@@ -107,7 +107,7 @@ def getChClient():
         verify=False,
         database='default',
         compression=True,
-        settings = {'use_numpy': True}
+        settings = {'use_numpy': use_numpy}
     )
     return client
 

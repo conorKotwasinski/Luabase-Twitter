@@ -459,7 +459,7 @@ def extract_transform_load_polygon(
     end_block=None,
     lag=100,
     max_running=10,
-    max_blocks_per_job=100,
+    max_blocks_per_job=200,
 ):
 
     ######check if > max jobs running######

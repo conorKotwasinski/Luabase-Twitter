@@ -11,7 +11,6 @@ import logging
 from logger import logger
 import json
 
-logging.getLogger("ethereum_dasm.evmdasm").setLevel(logging.CRITICAL)
 
 # function to extract raw polygon data from node
 default_item_types = [
@@ -455,7 +454,7 @@ def extract_transform_load_polygon(
     clickhouse_client,
     non_np_clickhouse_client,
     pg_db,
-    polygon_db="polygon",
+    job_type="getPolygonEtl",
     start_block=None,
     end_block=None,
     lag=100,
@@ -464,7 +463,7 @@ def extract_transform_load_polygon(
 ):
 
     ######check if > max jobs running######
-    job_summary = getJobSummary(pg_db, "getPolygonEtl")
+    job_summary = getJobSummary(pg_db, job_type)
     if job_summary["running"] >= max_running:
         logger.info(f"already another {max_running} jobs running!")
         return {"ok": True, "status": f"max of {max_running} jobs already running"}
@@ -508,7 +507,7 @@ def extract_transform_load_polygon(
     ######extract new polygon data############
 
     # insert new job that is running
-    job_details = {"type": "getPolygonEtl", "start": start_block, "end": end_block}
+    job_details = {"type": job_type, "start": start_block, "end": end_block}
     job_row = {
         "type": job_details["type"],
         "status": "running",
@@ -516,7 +515,7 @@ def extract_transform_load_polygon(
     }
     job_row = insertJob(pg_db.engine, job_row)
     log_details = {
-        "type": "getPolygonEtl",
+        "type": job_type,
         "id": job_row["row"]["id"],
         "start": start_block,
         "end": end_block,
@@ -573,6 +572,13 @@ def extract_transform_load_polygon(
     )
 
     ######load polygon data############
+
+    # check if mainnet or testnet db
+    if job_type == "getPolygonEtl":
+        polygon_db = "polygon"
+    elif job_type == "getPolygonTestnetEtl":
+        polygon_db = "polygon_testnet"
+
     logger.info(
         f"load new polygon data... ${job_row}", extra={"json_fields": log_details}
     )

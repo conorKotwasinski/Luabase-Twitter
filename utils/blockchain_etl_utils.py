@@ -101,6 +101,7 @@ class EthInMemoryAdapter:
         return int(self.web3.eth.getBlock("latest").number)
 
     def export_all(self, start_block, end_block):
+        logging.getLogger("ethereum_dasm.evmdasm").setLevel(logging.CRITICAL)
         # Export blocks and transactions
         blocks, transactions = [], []
         if self._should_export(EntityType.BLOCK) or self._should_export(

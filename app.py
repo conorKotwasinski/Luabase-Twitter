@@ -406,7 +406,23 @@ def run_job():
             clickhouse_client=getChClient(use_numpy=True),
             non_np_clickhouse_client=getChClient(use_numpy=False),
             pg_db=db.engine,
-            polygon_db="polygon",
+            job_type=data.get("type"),
+            start_block=data.get("start_block", None),
+            end_block=data.get("end_block", None),
+            lag=data.get("lag", 100),
+            max_running=data.get("max_running", 10),
+            max_blocks_per_job=data.get("max_blocks_per_job", 100),
+        )
+        return json.dumps(j), 200, {"ContentType": "application/json"}
+
+    if data.get("type") == "getPolygonTestnetEtl":
+
+        j = extract_transform_load_polygon(
+            node_uri=QUICKNODE_POLYGON_TESTNET,
+            clickhouse_client=getChClient(use_numpy=True),
+            non_np_clickhouse_client=getChClient(use_numpy=False),
+            pg_db=db.engine,
+            job_type=data.get("type"),
             start_block=data.get("start_block", None),
             end_block=data.get("end_block", None),
             lag=data.get("lag", 100),

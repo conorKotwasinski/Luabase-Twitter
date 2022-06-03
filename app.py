@@ -41,6 +41,7 @@ from utils.pg_db_utils import insertJob, updateJob, getJobSummary, getPendingJob
 import utils.pg_db_utils as pgu
 from el.btc_etl import extract_transform_load_btc
 from el.btc_transaction_backlog import get_btc_txn_backlog
+from el.polygon_etl import extract_transform_load_polygon
 
 if not RUNNING_LOCAL:
     sentry_sdk.init(
@@ -60,6 +61,9 @@ SQLALCHEMY_DATABASE_URI = lu.get_secret('SUPABASE_SQLALCHEMY_DATABASE_URI')
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQL_POOL_PRE_PING = True
 QUICKNODE_BTC = lu.get_secret('BTC_QUICKNODE')
+QUICKNODE_POLYGON_MAINNET = lu.get_secret('POLYGON_MAINNET_QUICKNODE')
+QUICKNODE_POLYGON_TESTNET = lu.get_secret('POLYGON_TESTNET_QUICKNODE')
+
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -385,6 +389,22 @@ def run_job():
         }
         logger.info(f'starting backlogBtcTxns job with id {d["id"]} and month {d["month"]}', extra={'json_fields':log_details})
         return json.dumps(log_details), 200, {'ContentType':'application/json'}
+
+    if data.get('type') == 'getPolygonEtl':
+
+        j = extract_transform_load_polygon(
+            node_uri = QUICKNODE_POLYGON_MAINNET,
+            clickhouse_client = getChClient(use_numpy = True),
+            non_np_clickhouse_client = getChClient(use_numpy = False),
+            pg_db = db.engine, 
+            polygon_db = 'polygon',
+            start_block = data.get('start_block', None), 
+            end_block = data.get('end_block', None), 
+            lag = data.get('lag', 100), 
+            max_running = data.get('max_running', 10), 
+            max_blocks_per_job = data.get('max_blocks_per_job', 100)
+        )
+        return json.dumps(j), 200, {'ContentType':'application/json'}
 
     if data.get('type') == 'testJob':
         logger.info(f'run_job is testJob!!!!!!!!!!!: {data}')

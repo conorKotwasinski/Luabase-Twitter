@@ -138,6 +138,7 @@ def get_new_btc_data(clickhouse_client, uri, start_block, end_block, target="bot
                         try_counter=try_counter
                     )
                 )
+
         if try_counter > 10:
             raise AttributeError("failed to get new data from quicknode after 10 tries")
         else:
@@ -177,7 +178,6 @@ def get_new_btc_data(clickhouse_client, uri, start_block, end_block, target="bot
                         try_counter=try_counter
                     )
                 )
-
         if try_counter > 10:
             raise AttributeError("failed to get new data from quicknode after 10 tries")
         else:

@@ -24,7 +24,8 @@ ENV PYTHONUNBUFFERED True
 
 COPY requirements.txt /app/
 # --no-cache-dir
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip pip3 --default-timeout=600 install -r /app/requirements.txt 
+# RUN --mount=type=cache,mode=0755,target=/root/.cache/pip pip3 --default-timeout=600 install -r /app/requirements.txt 
+RUN pip3 --default-timeout=600 install -r /app/requirements.txt 
 
 EXPOSE 22
 EXPOSE 5000/tcp

@@ -1,9 +1,10 @@
 import pytest
-from luapy import app
 
 
-def test_ping():
-    assert 0 == 0
+@pytest.mark.parametrize("method", ("get", "post"))
+def test_ping(client, method):
+    response = getattr(client, method)('/ping')
+    assert b'{"ok": true, "name": "World"}' == response.data
 
 def test_ping_sql():
     assert 0 == 0

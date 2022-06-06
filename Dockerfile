@@ -5,10 +5,10 @@
 FROM python:3.10 as testbuild
 COPY requirements.txt requirements-dev.txt /luapy/
 RUN pip3 --default-timeout=600 install -r /luapy/requirements.txt  -r /luapy/requirements-dev.txt
-COPY luapy/ /luapy/
-COPY tests/ /tests/
 ENV RUNNING_LOCAL=1
 ENV GOOGLE_APPLICATION_CREDENTIALS=/luapy/luabase-dev.json
+COPY luapy/ /luapy/
+COPY tests/ /tests/
 RUN python -m pytest /tests/
 
 # Second stage: build the final image. Unlike first stage, credentials *are not* provided

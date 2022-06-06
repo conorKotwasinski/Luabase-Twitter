@@ -411,7 +411,7 @@ def run_job():
             end_block=data.get("end_block", None),
             lag=data.get("lag", 100),
             max_running=data.get("max_running", 10),
-            max_blocks_per_job=data.get("max_blocks_per_job", 200),
+            max_blocks_per_job=data.get("max_blocks_per_job", 500),
         )
         return json.dumps(j), 200, {"ContentType": "application/json"}
 
@@ -427,7 +427,7 @@ def run_job():
             end_block=data.get("end_block", None),
             lag=data.get("lag", 100),
             max_running=data.get("max_running", 10),
-            max_blocks_per_job=data.get("max_blocks_per_job", 200),
+            max_blocks_per_job=data.get("max_blocks_per_job", 500),
         )
         return json.dumps(j), 200, {"ContentType": "application/json"}
 

@@ -18,6 +18,10 @@ _mailinglist
 .idea/
 docs/_build/
 .vscode
+.ipynb
+dev_env/
+dev_notebooks/
+.ipynb_checkpoints/
 
 # Coverage reports
 htmlcov/

@@ -27,13 +27,17 @@ def get_node_backlog_polygon(
     ######extract new polygon data############
 
     try:
+        logger.info(
+            f"getting backlog polygon data for {job_type}, blocks {start_block} to {end_block}, id {job_id}",
+            extra={"json_fields": log_details},
+        )
         all_items = extract_polygon_data(node_uri, start_block, end_block, lag=0)
     except Exception as e:
         # mark job as failed if failed
         log_details["error"] = e
         print(log_details)
         logger.info(
-            f"failed getting backlog polygon data for {job_type}, blocks {start_block} to {end_block}",
+            f"failed getting backlog polygon data for {job_type}, blocks {start_block} to {end_block}, id {job_id}",
             extra={"json_fields": log_details},
         )
         updateJobRow = {
@@ -43,13 +47,13 @@ def get_node_backlog_polygon(
         updateJobStatus(pg_db.engine, updateJobRow)
         return {"ok": False}
     logger.info(
-        f"completed getting backlog polygon data for {job_type}, blocks {start_block} to {end_block}",
+        f"completed getting backlog polygon data for {job_type}, blocks {start_block} to {end_block}, id {job_id}",
         extra={"json_fields": log_details},
     )
 
     ######transform polygon data############
     logger.info(
-        f"transforming backlog polygon data for {job_type}, blocks {start_block} to {end_block}",
+        f"transforming backlog polygon data for {job_type}, blocks {start_block} to {end_block}, id {job_id}",
         extra={"json_fields": log_details},
     )
     try:
@@ -58,7 +62,7 @@ def get_node_backlog_polygon(
         # mark job as failed if failed
         log_details["error"] = e
         logger.info(
-            f"failed transforming backlog polygon data for {job_type}, blocks {start_block} to {end_block}",
+            f"failed transforming backlog polygon data for {job_type}, blocks {start_block} to {end_block}, id {job_id}",
             extra={"json_fields": log_details},
         )
         updateJobRow = {
@@ -68,7 +72,7 @@ def get_node_backlog_polygon(
         updateJobStatus(pg_db.engine, updateJobRow)
         return {"ok": False}
     logger.info(
-        f"completed transforming backlog polygon data for {job_type}, blocks {start_block} to {end_block}",
+        f"completed transforming backlog polygon data for {job_type}, blocks {start_block} to {end_block}, id {job_id}",
         extra={"json_fields": log_details},
     )
 
@@ -81,7 +85,7 @@ def get_node_backlog_polygon(
         polygon_db = "polygon_testnet"
 
     logger.info(
-        f"load backlog polygon data for {job_type}, blocks {start_block} to {end_block}",
+        f"load backlog polygon data for {job_type}, blocks {start_block} to {end_block}, id {job_id}",
         extra={"json_fields": log_details},
     )
     try:
@@ -92,7 +96,7 @@ def get_node_backlog_polygon(
         # mark job as failed if failed
         log_details["error"] = e
         logger.info(
-            f"failed loading backlog polygon data for {job_type}, blocks {start_block} to {end_block}",
+            f"failed loading backlog polygon data for {job_type}, blocks {start_block} to {end_block}, id {job_id}",
             extra={"json_fields": log_details},
         )
         updateJobRow = {
@@ -109,7 +113,7 @@ def get_node_backlog_polygon(
     }
     updateJobStatus(pg_db.engine, updateJobRow)
     logger.info(
-        f"job done for {job_type}, blocks {start_block} to {end_block}",
+        f"job done for {job_type}, blocks {start_block} to {end_block}, id {job_id}",
         extra={"json_fields": log_details},
     )
     return {"ok": True}

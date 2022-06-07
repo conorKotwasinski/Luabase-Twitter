@@ -590,7 +590,7 @@ def extract_transform_load_polygon(
         # mark job as failed if failed
         log_details["error"] = e
         logger.info(
-            f"failed transforming polygon data... ${job_row}:",
+            f"failed loading polygon data... ${job_row}:",
             extra={"json_fields": log_details},
         )
         updateJobRow = {

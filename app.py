@@ -51,6 +51,7 @@ import utils.pg_db_utils as pgu
 from el.btc_etl import extract_transform_load_btc
 from el.btc_transaction_backlog import get_btc_txn_backlog
 from el.polygon_etl import extract_transform_load_polygon
+from el.polygon_node_backlog import get_node_backlog_polygon
 
 if not RUNNING_LOCAL:
     sentry_sdk.init(
@@ -341,8 +342,8 @@ def get_jobs():
         pgu.updateJobStatus(db.engine, updateJobRow)
         # send job to cloud run with post request
         # url = "https://luabase-mjr-py.ngrok.io/run_job"
-        # url = "http://localhost:5000/run_job"
-        url = "https://luabase-py-msgn5tdnsa-uc.a.run.app/run_job"
+        url = "http://localhost:5000/run_job"
+        # url = "https://luabase-py-msgn5tdnsa-uc.a.run.app/run_job"
         payload = job["details"]
         payload["id"] = job["id"]
         headers = {"content-type": "application/json"}
@@ -428,6 +429,20 @@ def run_job():
             lag=data.get("lag", 100),
             max_running=data.get("max_running", 10),
             max_blocks_per_job=data.get("max_blocks_per_job", 500),
+        )
+        return json.dumps(j), 200, {"ContentType": "application/json"}
+
+    if data.get("type") == "polygonBacklog":
+
+        j = get_node_backlog_polygon(
+            node_uri=QUICKNODE_POLYGON_MAINNET,
+            clickhouse_client=getChClient(use_numpy=True),
+            non_np_clickhouse_client=getChClient(use_numpy=False),
+            pg_db=db.engine,
+            job_id = data.get("id"),
+            job_type=data.get("type"),
+            start_block=data.get("start"),
+            end_block=data.get("end")
         )
         return json.dumps(j), 200, {"ContentType": "application/json"}
 

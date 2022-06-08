@@ -17,7 +17,7 @@ def getChClient():
         database='default',
         compression=True,
         settings = {
-            'use_numpy': False, 
+            'use_numpy': False,
             'allow_experimental_object_types': 1,
             }
     )
@@ -27,7 +27,7 @@ from solana.rpc.api import Client
 import os, sys
 p = os.path.abspath('.')
 sys.path.insert(1, p)
-from logger import logger
+from luapy.logger import logger
 
 def getSigner(transaction):
     try:
@@ -50,7 +50,7 @@ def getBlocks():
     rows = []
     t = datetime.datetime.utcfromtimestamp(block['result'].get('blockTime', 0))
     for index, transaction  in enumerate(transactions):
-        
+
         row = {
             'block_slot': slot,
             'block_timestamp': t,
@@ -76,14 +76,14 @@ def getBlocks():
     # `signer` LowCardinality(String),
     # `details` JSON,
     sql = '''
-    INSERT INTO solana.transactions_raw 
+    INSERT INTO solana.transactions_raw
         (
-            `block_slot`, 
-            `block_timestamp`, 
-            `block_hash`, 
-            `index`, 
-            `id`, 
-            `signer`, 
+            `block_slot`,
+            `block_timestamp`,
+            `block_hash`,
+            `index`,
+            `id`,
+            `signer`,
             `details`
         ) VALUES
     '''

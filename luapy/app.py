@@ -25,12 +25,12 @@ if not RUNNING_LOCAL:
     gcp_loggging_client = google.cloud.logging.Client()
     gcp_loggging_client.setup_logging()
 
-import utils.lua_utils as lu
+import luapy.utils.lua_utils as lu
 
-test_from_cloud_run = lu.get_secret("test_from_cloud_run")
-print("test_from_cloud_run: ", test_from_cloud_run)
+test_from_cloud_run = lu.get_secret('test_from_cloud_run')
+print('test_from_cloud_run: ', test_from_cloud_run)
 
-from logger import logger
+from luapy.logger import logger
 
 import requests
 from bs4 import BeautifulSoup
@@ -39,7 +39,7 @@ from clickhouse_driver import Client
 
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
-from utils.pg_db_utils import (
+from luapy.utils.pg_db_utils import (
     insertJob,
     updateJob,
     getJobSummary,
@@ -47,11 +47,11 @@ from utils.pg_db_utils import (
     getDoneMaxJob,
     getMaxJob,
 )
-import utils.pg_db_utils as pgu
-from el.btc_etl import extract_transform_load_btc
-from el.btc_transaction_backlog import get_btc_txn_backlog
-from el.polygon_etl import extract_transform_load_polygon
-from el.polygon_node_backlog import get_node_backlog_polygon
+import luapy.utils.pg_db_utils as pgu
+from luapy.el.btc_etl import extract_transform_load_btc
+from luapy.el.btc_transaction_backlog import get_btc_txn_backlog
+from luapy.el.polygon_etl import extract_transform_load_polygon
+from luapy.el.polygon_node_backlog import get_node_backlog_polygon
 
 if not RUNNING_LOCAL:
     sentry_sdk.init(
@@ -141,7 +141,7 @@ def deleteOldAddresses(newStart, newEnd):
     logger.info(f"deleteOldAddressData...")
     chClient = getChClient()
     sql = f"""
-    ALTER TABLE default.name_tags2_local 
+    ALTER TABLE default.name_tags2_local
     DELETE WHERE id >= {newStart} AND id <= {newEnd}
     """
     print("deleteOldAddressData sql: ", sql)
@@ -317,9 +317,9 @@ def pingsql():
     logger.info(f"ping_sql...")
     with db.engine.connect() as con:
         sql = f"""
-        select 
-        max(id) as max_id, 
-        min(id) as min_id, 
+        select
+        max(id) as max_id,
+        min(id) as min_id,
         count(id) as count,
         sum(case when j.status = 'running' then 1 else 0 end) as running
         from "public".jobs as j

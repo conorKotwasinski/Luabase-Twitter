@@ -1,3 +1,13 @@
+from datetime import datetime, timedelta
+import json
+
+import sqlalchemy
+from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from flask import Flask
+import flask
+import pandas as pd
+
 from bitcoinetl.enumeration.chain import Chain
 from bitcoinetl.jobs.enrich_transactions import EnrichTransactionsJob
 from bitcoinetl.jobs.export_blocks_job import ExportBlocksJob
@@ -9,16 +19,10 @@ from bitcoinetl.rpc.bitcoin_rpc import BitcoinRpc
 from bitcoinetl.service.btc_block_range_service import BtcBlockRangeService
 from bitcoinetl.jobs.enrich_transactions import EnrichTransactionsJob
 from clickhouse_driver import Client
-import pandas as pd
-from datetime import datetime, timedelta
-from logger import logger
-import sqlalchemy
-from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
-from flask import Flask
-import flask
-import json
-from utils.pg_db_utils import insertJob, updateJob, getJobSummary, getDoneMaxJob
+
+from luapy.logger import logger
+from luapy.utils.pg_db_utils import insertJob, updateJob, getJobSummary, getDoneMaxJob
+
 
 # function for getting max block in clickhouse
 def get_max_btc_db_block(clickhouse_client, target="both"):
@@ -326,17 +330,17 @@ def txn_json_to_df(transactions_json, transaction_inputs, transaction_outputs):
 def load_blocks(blocks_df, clickhouse_client):
     blocks_load_query = """
     INSERT INTO bitcoin.blocks_raw (
-        hash, 
-        size, 
-        stripped_size, 
-        weight, 
-        number, 
-        version, 
-        merkle_root, 
-        timestamp, 
-        nonce, 
-        bits, 
-        coinbase_param, 
+        hash,
+        size,
+        stripped_size,
+        weight,
+        number,
+        version,
+        merkle_root,
+        timestamp,
+        nonce,
+        bits,
+        coinbase_param,
         transaction_count
         ) VALUES
         """

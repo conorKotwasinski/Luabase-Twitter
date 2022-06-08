@@ -9,7 +9,7 @@ ENV RUNNING_LOCAL=1
 ENV GOOGLE_APPLICATION_CREDENTIALS=/luapy/luabase-dev.json
 COPY luapy/ /luapy/
 COPY tests/ /tests/
-RUN python -m pytest /tests/
+RUN python -m pytest -v /tests/
 
 # Second stage: build the final image. Unlike first stage, credentials *are not* provided
 # Use the official lightweight Python image.

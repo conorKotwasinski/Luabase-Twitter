@@ -2,7 +2,7 @@
 # [START run_lua_py_dockerfile]
 
 # First stage: this connects using local credentials, builds with additional libs and runs unit tests
-FROM python:3.10 as testbuild
+FROM python:3.9 as testbuild
 COPY requirements.txt requirements-dev.txt /luapy/
 RUN pip3 --default-timeout=600 install -r /luapy/requirements.txt  -r /luapy/requirements-dev.txt
 ENV RUNNING_LOCAL=1

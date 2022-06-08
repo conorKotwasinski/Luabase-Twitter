@@ -1,10 +1,10 @@
-from el.polygon_etl import (
+from luapy.el.polygon_etl import (
     extract_polygon_data,
     transform_polygon_data,
     load_polygon_data,
 )
-from utils.pg_db_utils import updateJobStatus
-from logger import logger
+from luapy.utils.pg_db_utils import updateJobStatus
+from luapy.logger import logger
 
 
 def get_node_backlog_polygon(

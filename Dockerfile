@@ -1,20 +1,35 @@
 # [START cloudrun_lua_py_dockerfile]
 # [START run_lua_py_dockerfile]
-
-# First stage: this connects using local credentials, builds with additional libs and runs unit tests
-FROM python:3.9 as testbuild
-COPY requirements.txt requirements-dev.txt /luapy/
-RUN pip3 --default-timeout=600 install -r /luapy/requirements.txt  -r /luapy/requirements-dev.txt
-ENV RUNNING_LOCAL=1
-ENV GOOGLE_APPLICATION_CREDENTIALS=/luapy/luabase-dev.json
-COPY luapy/ /luapy/
-COPY tests/ /tests/
-RUN python -m pytest -v /tests/
-
-# Second stage: build the final image. Unlike first stage, credentials *are not* provided
+# Arg used to build either locally for developing or cloud for deployment
+ARG local=cloud
 # Use the official lightweight Python image.
 # https://hub.docker.com/_/python
-FROM python:3.9
+FROM python:3.9 as base
+COPY requirements.txt requirements-dev.txt /luapy/
+RUN pip3 --default-timeout=600 install -r /luapy/requirements.txt
+COPY luapy/ /luapy/
+
+# testbuild includes dev dependencies and tests
+FROM base as testbuild
+COPY requirements-dev.txt /luapy/
+RUN pip3 --default-timeout=600 install -r /luapy/requirements-dev.txt
+COPY tests/ /tests/
+
+# not local, credentials should already be in the environment
+FROM testbuild as testbuild-cloud
+ENV RUNNING_LOCAL=0
+
+# running tests locally needs credentials
+FROM testbuild as testbuild-local
+ENV RUNNING_LOCAL=1
+ENV GOOGLE_APPLICATION_CREDENTIALS=/luapy/luabase-dev.json
+
+# runs pytest
+FROM testbuild-${local} as testbuild
+RUN python -m pytest -v /tests/
+
+# final image
+FROM base as final
 
 # Allow statements and log messages to immediately appear in the Knative logs
 ENV PYTHONUNBUFFERED True
@@ -33,18 +48,13 @@ ENV PYTHONUNBUFFERED True
 # Install production dependencies.
 # RUN pip install --no-cache-dir -r requirements.txt
 
-COPY requirements.txt /luapy/
 # --no-cache-dir
 # RUN --mount=type=cache,mode=0755,target=/root/.cache/pip pip3 --default-timeout=600 install -r /luapy/requirements.txt 
-RUN pip3 --default-timeout=600 install -r /luapy/requirements.txt 
 
 EXPOSE 22
 EXPOSE 5000/tcp
 
 ENV PORT 5000
-
-COPY luapy/ /luapy/
-
 
 # Run the web service on container startup. Here we use the gunicorn
 # webserver, with one worker process and 8 threads.

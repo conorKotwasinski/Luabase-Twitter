@@ -1,6 +1,17 @@
 # [START cloudrun_lua_py_dockerfile]
 # [START run_lua_py_dockerfile]
 
+# First stage: this connects using local credentials, builds with additional libs and runs unit tests
+FROM python:3.9 as testbuild
+COPY requirements.txt requirements-dev.txt /luapy/
+RUN pip3 --default-timeout=600 install -r /luapy/requirements.txt  -r /luapy/requirements-dev.txt
+ENV RUNNING_LOCAL=1
+ENV GOOGLE_APPLICATION_CREDENTIALS=/luapy/luabase-dev.json
+COPY luapy/ /luapy/
+COPY tests/ /tests/
+RUN python -m pytest -v /tests/
+
+# Second stage: build the final image. Unlike first stage, credentials *are not* provided
 # Use the official lightweight Python image.
 # https://hub.docker.com/_/python
 FROM python:3.9
@@ -22,22 +33,17 @@ ENV PYTHONUNBUFFERED True
 # Install production dependencies.
 # RUN pip install --no-cache-dir -r requirements.txt
 
-COPY requirements.txt /app/
+COPY requirements.txt /luapy/
 # --no-cache-dir
-# RUN --mount=type=cache,mode=0755,target=/root/.cache/pip pip3 --default-timeout=600 install -r /app/requirements.txt 
-RUN pip3 --default-timeout=600 install -r /app/requirements.txt 
+# RUN --mount=type=cache,mode=0755,target=/root/.cache/pip pip3 --default-timeout=600 install -r /luapy/requirements.txt 
+RUN pip3 --default-timeout=600 install -r /luapy/requirements.txt 
 
 EXPOSE 22
 EXPOSE 5000/tcp
 
 ENV PORT 5000
 
-COPY app.py /app/
-COPY logger.py /app/
-
-COPY el /app/el
-COPY utils /app/utils
-
+COPY luapy/ /luapy/
 
 
 # Run the web service on container startup. Here we use the gunicorn
@@ -50,7 +56,7 @@ COPY utils /app/utils
 
 # CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
 
-CMD cd app && exec gunicorn --timeout 0 --bind :$PORT --workers $WORKERS --threads $THREADS app:app
+CMD exec gunicorn --timeout 0 --bind :$PORT --workers $WORKERS --threads $THREADS luapy.app:app
 
 # [END run_lua_py_dockerfile]
 # [END cloudrun_lua_py_dockerfile]

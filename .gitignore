@@ -28,3 +28,6 @@ htmlcov/
 .coverage
 .coverage.*
 *,cover
+
+# credentials
+luabase-dev.json

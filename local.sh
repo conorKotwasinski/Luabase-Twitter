@@ -12,7 +12,7 @@ echo "starting build..."
 # --env-file .env \
 
 cp $GOOGLE_APPLICATION_CREDENTIALS ./luapy/luabase-dev.json
-docker build -t ${DOCKER_TAG} .
+DOCKER_BUILDKIT=1 docker build --build-arg local=local -t ${DOCKER_TAG} .
 rm ./luapy/luabase-dev.json
 
 docker run -it \

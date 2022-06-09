@@ -10,9 +10,8 @@ export RUNNING_LOCAL=1
 echo "starting test build..."
 
 cp $GOOGLE_APPLICATION_CREDENTIALS ./luapy/luabase-dev.json
-docker build --target testbuild -t ${DOCKER_TAG} .
+DOCKER_BUILDKIT=1 docker build --build-arg local=local --target testbuild -t ${DOCKER_TAG} .
 rm ./luapy/luabase-dev.json
-
 
 # docker run -it \
 #     -p ${PORT}:${PORT} \

@@ -2,7 +2,7 @@ steps:
 # Build the container targetting the test stage
 - name: 'gcr.io/cloud-builders/docker'
   args: [
-    'build',
+    'build', '--no-cache',
     '--network=cloudbuild',
     '--target', 'testbuild',
     '-t', 'gcr.io/luabase/luabase-py-test',

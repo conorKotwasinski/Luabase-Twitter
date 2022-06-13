@@ -1,3 +1,5 @@
+import json
+
 import pytest
 import sqlalchemy
 
@@ -28,3 +30,14 @@ def test_run_job(client):
     })
     assert response.status_code == 200
     assert response.data == b'{"ok": true, "data": "Hello pytest!"}'
+
+
+def test_run_job_error(client):
+    response = client.post('/run_job', json={
+        'type': 'PYTEST_ONLY',
+        'error': True,
+    })
+    assert response.status_code == 500
+    data = json.loads(response.data)
+    assert "error" in data
+    assert data["error"] == "HandledError"

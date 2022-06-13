@@ -6,6 +6,7 @@ import os
 import sys
 import uuid
 import time
+import traceback
 from threading import Thread
 from flask_cors import CORS
 from pyparsing import dbl_slash_comment
@@ -172,122 +173,138 @@ def create_app(config=__name__, db_options={}):
         j = {"ok": True, "data": jobs}
         return json.dumps(j), 200, {"ContentType": "application/json"}
 
-
     @app.route("/run_job", methods=["GET", "POST"])
     def run_job():
         data = flask.request.get_json()
         logger.info(f"run_job...", extra={"json_fields": data})
-        if data.get("type") == "getEthNameTag":
-            j = getEthNameTags(db, data)
-            return json.dumps(j), 200, {"ContentType": "application/json"}
-        if data.get("type") == "getBtcEtl":
-            target = data.get("target", "both")
-            lag = data.get("lag", 6)
-            start_block = data.get("startBlock", None)
-            end_block = data.get("endBlock", None)
-
-            j = extract_transform_load_btc(
-                getChClient(), QUICKNODE_BTC, db.engine, target, lag, start_block, end_block
-            )
-            return json.dumps(j), 200, {"ContentType": "application/json"}
-
-        if data.get("type") == "backlogBtcTxns":
-
-            d = {
-                "month": data.get("month"),
-                "bg_client": bg_client,
-                "clickhouse_client": getChClient(),
-                "pg_db": db,
-                "id": data.get("id"),
-                "increment": data.get("increment", 10000),
+        try:
+            response = _run_job(data, db)
+            return response
+        except Exception as e:
+            logger.error(''.join(traceback.format_tb(e.__traceback__)))
+            j = {
+                "error": str(e),
             }
+            return json.dumps(j), 500, {"ContentType": "application/json"}
 
-            thread = Thread(target=get_btc_txn_backlog, args=(d,))
+    return app
 
-            thread.daemon = True
-            thread.start()
-            log_details = {"type": "backlogBtcTxns", "month": d["month"], "id": d["id"]}
-            logger.info(
-                f'starting backlogBtcTxns job with id {d["id"]} and month {d["month"]}',
-                extra={"json_fields": log_details},
-            )
-            return json.dumps(log_details), 200, {'ContentType':'application/json'}
 
-        if data.get("type") == "getPolygonEtl":
+def _run_job(data, db):
 
-            j = extract_transform_load_polygon(
-                node_uri=QUICKNODE_POLYGON_MAINNET,
-                clickhouse_client=getChClient(use_numpy=True),
-                non_np_clickhouse_client=getChClient(use_numpy=False),
-                pg_db=db.engine,
-                job_type=data.get("type"),
-                start_block=data.get("start_block", None),
-                end_block=data.get("end_block", None),
-                lag=data.get("lag", 100),
-                max_running=data.get("max_running", 10),
-                max_blocks_per_job=data.get("max_blocks_per_job", 500),
-            )
-            return json.dumps(j), 200, {"ContentType": "application/json"}
+    if data.get("type") == "getEthNameTag":
+        j = getEthNameTags(db, data)
+        return json.dumps(j), 200, {"ContentType": "application/json"}
 
-        if data.get("type") == "getPolygonTestnetEtl":
+    if data.get("type") == "getBtcEtl":
+        target = data.get("target", "both")
+        lag = data.get("lag", 6)
+        start_block = data.get("startBlock", None)
+        end_block = data.get("endBlock", None)
 
-            j = extract_transform_load_polygon(
-                node_uri=QUICKNODE_POLYGON_TESTNET,
-                clickhouse_client=getChClient(use_numpy=True),
-                non_np_clickhouse_client=getChClient(use_numpy=False),
-                pg_db=db.engine,
-                job_type=data.get("type"),
-                start_block=data.get("start_block", None),
-                end_block=data.get("end_block", None),
-                lag=data.get("lag", 100),
-                max_running=data.get("max_running", 10),
-                max_blocks_per_job=data.get("max_blocks_per_job", 500),
-            )
-            return json.dumps(j), 200, {"ContentType": "application/json"}
+        j = extract_transform_load_btc(
+            getChClient(), QUICKNODE_BTC, db.engine, target, lag, start_block, end_block
+        )
+        return json.dumps(j), 200, {"ContentType": "application/json"}
 
-        if data.get("type") == "polygonBacklog":
+    if data.get("type") == "backlogBtcTxns":
 
-            j = get_node_backlog_polygon(
-                node_uri=QUICKNODE_POLYGON_MAINNET,
-                clickhouse_client=getChClient(use_numpy=True),
-                non_np_clickhouse_client=getChClient(use_numpy=False),
-                pg_db=db.engine,
-                job_id = data.get("id"),
-                job_type=data.get("type"),
-                start_block=data.get("start"),
-                end_block=data.get("end")
-            )
-            return json.dumps(j), 200, {"ContentType": "application/json"}
+        d = {
+            "month": data.get("month"),
+            "bg_client": bg_client,
+            "clickhouse_client": getChClient(),
+            "pg_db": db,
+            "id": data.get("id"),
+            "increment": data.get("increment", 10000),
+        }
 
-        if data.get("type") == "polygonTestnetBacklog":
+        thread = Thread(target=get_btc_txn_backlog, args=(d,))
 
-            j = get_node_backlog_polygon(
-                node_uri=QUICKNODE_POLYGON_TESTNET,
-                clickhouse_client=getChClient(use_numpy=True),
-                non_np_clickhouse_client=getChClient(use_numpy=False),
-                pg_db=db.engine,
-                job_id = data.get("id"),
-                job_type=data.get("type"),
-                start_block=data.get("start"),
-                end_block=data.get("end")
-            )
-            return json.dumps(j), 200, {"ContentType": "application/json"}
+        thread.daemon = True
+        thread.start()
+        log_details = {"type": "backlogBtcTxns", "month": d["month"], "id": d["id"]}
+        logger.info(
+            f'starting backlogBtcTxns job with id {d["id"]} and month {d["month"]}',
+            extra={"json_fields": log_details},
+        )
+        return json.dumps(log_details), 200, {'ContentType':'application/json'}
 
-        if data.get("type") == "testJob":
-            logger.info(f"run_job is testJob!!!!!!!!!!!: {data}")
-            updateJobRow = {"id": data["id"], "status": "success"}
-            pgu.updateJobStatus(db.engine, updateJobRow)
-            j = {"ok": True, "data": updateJobRow}
-            return json.dumps(j), 200, {"ContentType":"application/json"}
+    if data.get("type") == "getPolygonEtl":
 
-        if data.get("type") == "PYTEST_ONLY":
+        j = extract_transform_load_polygon(
+            node_uri=QUICKNODE_POLYGON_MAINNET,
+            clickhouse_client=getChClient(use_numpy=True),
+            non_np_clickhouse_client=getChClient(use_numpy=False),
+            pg_db=db.engine,
+            job_type=data.get("type"),
+            start_block=data.get("start_block", None),
+            end_block=data.get("end_block", None),
+            lag=data.get("lag", 100),
+            max_running=data.get("max_running", 10),
+            max_blocks_per_job=data.get("max_blocks_per_job", 500),
+        )
+        return json.dumps(j), 200, {"ContentType": "application/json"}
+
+    if data.get("type") == "getPolygonTestnetEtl":
+
+        j = extract_transform_load_polygon(
+            node_uri=QUICKNODE_POLYGON_TESTNET,
+            clickhouse_client=getChClient(use_numpy=True),
+            non_np_clickhouse_client=getChClient(use_numpy=False),
+            pg_db=db.engine,
+            job_type=data.get("type"),
+            start_block=data.get("start_block", None),
+            end_block=data.get("end_block", None),
+            lag=data.get("lag", 100),
+            max_running=data.get("max_running", 10),
+            max_blocks_per_job=data.get("max_blocks_per_job", 500),
+        )
+        return json.dumps(j), 200, {"ContentType": "application/json"}
+
+    if data.get("type") == "polygonBacklog":
+
+        j = get_node_backlog_polygon(
+            node_uri=QUICKNODE_POLYGON_MAINNET,
+            clickhouse_client=getChClient(use_numpy=True),
+            non_np_clickhouse_client=getChClient(use_numpy=False),
+            pg_db=db.engine,
+            job_id = data.get("id"),
+            job_type=data.get("type"),
+            start_block=data.get("start"),
+            end_block=data.get("end")
+        )
+        return json.dumps(j), 200, {"ContentType": "application/json"}
+
+    if data.get("type") == "polygonTestnetBacklog":
+
+        j = get_node_backlog_polygon(
+            node_uri=QUICKNODE_POLYGON_TESTNET,
+            clickhouse_client=getChClient(use_numpy=True),
+            non_np_clickhouse_client=getChClient(use_numpy=False),
+            pg_db=db.engine,
+            job_id = data.get("id"),
+            job_type=data.get("type"),
+            start_block=data.get("start"),
+            end_block=data.get("end")
+        )
+        return json.dumps(j), 200, {"ContentType": "application/json"}
+
+    if data.get("type") == "testJob":
+        logger.info(f"run_job is testJob!!!!!!!!!!!: {data}")
+        updateJobRow = {"id": data["id"], "status": "success"}
+        pgu.updateJobStatus(db.engine, updateJobRow)
+        j = {"ok": True, "data": updateJobRow}
+        return json.dumps(j), 200, {"ContentType":"application/json"}
+
+    if data.get("type") == "PYTEST_ONLY":
+        if data.get("error"):
+            raise Exception("HandledError")
+        else:
             j = {"ok": True, "data": "Hello pytest!"}
             return json.dumps(j), 200, {"ContentType": "application/json"}
 
-        j = {"ok": True, "data": "running"}
-        return json.dumps(j), 200, {"ContentType": "application/json"}
-
-    return app
+    j = {"ok": True, "data": "running"}
+    return json.dumps(j), 200, {"ContentType": "application/json"}
 
 
 def send_request(url):

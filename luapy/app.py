@@ -181,13 +181,14 @@ def create_app(config=__name__, db_options={}):
             response = _run_job(data, db)
             return response
         except Exception as e:
-            logger.error(''.join(traceback.format_tb(e.__traceback__)))
             j = {
                 "error": str(e),
+                "traceback": logger.error(''.join(traceback.format_tb(e.__traceback__)))
             }
+            pgu.updateJobStatus(db.engine, {"id": data["id"], "status": "failed"})
             return json.dumps(j), 500, {"ContentType": "application/json"}
 
-    return app
+    return app, db
 
 
 def _run_job(data, db):
@@ -218,9 +219,7 @@ def _run_job(data, db):
             "increment": data.get("increment", 10000),
         }
 
-        thread = Thread(target=get_btc_txn_backlog, args=(d,))
-
-        thread.daemon = True
+        thread = Thread(target=get_btc_txn_backlog, args=(d,), daemon=True)
         thread.start()
         log_details = {"type": "backlogBtcTxns", "month": d["month"], "id": d["id"]}
         logger.info(
@@ -491,7 +490,7 @@ def getEthNameTags(db, data):
 # }
 # getEthNameTags(testd)
 
-app = create_app()
+app, db = create_app()
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

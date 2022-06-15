@@ -53,6 +53,7 @@ from luapy.el.btc_etl import extract_transform_load_btc
 from luapy.el.btc_transaction_backlog import get_btc_txn_backlog
 from luapy.el.polygon_etl import extract_transform_load_polygon
 from luapy.el.polygon_node_backlog import get_node_backlog_polygon
+from luapy.job import Job
 
 if not RUNNING_LOCAL:
     sentry_sdk.init(
@@ -219,7 +220,13 @@ def _run_job(data, db):
             "increment": data.get("increment", 10000),
         }
 
-        thread = Thread(target=get_btc_txn_backlog, args=(d,), daemon=True)
+        thread = Job(
+            target=get_btc_txn_backlog,
+            args=(d,),
+            job_id=data.get("id"),
+            db=db,
+            daemon=True
+        )
         thread.start()
         log_details = {"type": "backlogBtcTxns", "month": d["month"], "id": d["id"]}
         logger.info(

@@ -26,7 +26,8 @@ gcloud beta run services update ${DOCKER_TAG} \
     --image us.gcr.io/${PROJECT_ID}/${DOCKER_TAG} \
     --platform managed \
     --min-instances 10 \
-    --memory 16Gi \
+    --memory 32Gi \
+    --cpu 8000m \
     --timeout 3600 \
     --no-cpu-throttling \
     --account mike@luabase.com \

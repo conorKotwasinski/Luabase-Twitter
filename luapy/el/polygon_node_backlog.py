@@ -31,7 +31,7 @@ def get_node_backlog_polygon(
             f"getting backlog polygon data for ${log_details}",
             extra={"json_fields": log_details},
         )
-        all_items = extract_polygon_data(node_uri, start_block, end_block, lag=0)
+        all_items = extract_polygon_data(node_uri, start_block, end_block, lag=0, job_id=job_id)
     except Exception as e:
         # mark job as failed if failed
         log_details["error"] = e

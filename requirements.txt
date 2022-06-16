@@ -14,7 +14,7 @@ google-cloud-bigquery
 google-cloud-logging>=3.0.0
 pycodestyle
 git+https://github.com/luabase/bitcoin-etl#egg=bitcoin-etl
-git+https://github.com/luabase/polygon-etl@EIP-1559_ETL_Steven#subdirectory=cli
+git+https://github.com/luabase/polygon-etl@better_logging#subdirectory=cli
 # polygon-etl
 # google shit
 google-cloud-secret-manager==2.10.0

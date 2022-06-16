@@ -27,7 +27,7 @@ default_item_types = [
 
 
 def extract_polygon_data(
-    uri, start_block, end_block, lag, item_types=default_item_types
+    uri, start_block, end_block, lag, item_types=default_item_types, job_id=-1
 ):
 
     logging.getLogger("polygonetl.service.token_transfer_extractor").setLevel(
@@ -45,6 +45,7 @@ def extract_polygon_data(
         batch_size=100,
         max_workers=5,
         entity_types=",".join(item_types),
+        job_id=job_id,
     )
 
     polygon_exporter = InMemoryObjectExporter(
@@ -527,7 +528,9 @@ def extract_transform_load_polygon(
     )
 
     try:
-        all_items = extract_polygon_data(node_uri, start_block, end_block, lag)
+        all_items = extract_polygon_data(
+            node_uri, start_block, end_block, lag, job_id=job_row["row"]["id"]
+        )
     except Exception as e:
         # mark job as failed if failed
         log_details["error"] = e

@@ -54,15 +54,6 @@ from luapy.el.btc_transaction_backlog import get_btc_txn_backlog
 from luapy.el.polygon_etl import extract_transform_load_polygon
 from luapy.el.polygon_node_backlog import get_node_backlog_polygon
 
-if not RUNNING_LOCAL:
-    sentry_sdk.init(
-        dsn="https://5fce4fd9b9404cbe978b509a2465f027@o1176187.ingest.sentry.io/6325459",
-        integrations=[FlaskIntegration()],
-        # Set traces_sample_rate to 1.0 to capture 100%
-        # of transactions for performance monitoring.
-        # We recommend adjusting this value in production.
-        traces_sample_rate=0.1,
-    )
 
 SCRAPING_BEE_API_KEY = lu.get_secret("SCRAPING_BEE_API_KEY")
 CH_ADMIN_PASSWORD = lu.get_secret("CH_ADMIN_PASSWORD")
@@ -76,7 +67,18 @@ QUICKNODE_POLYGON_TESTNET = lu.get_secret("POLYGON_TESTNET_QUICKNODE")
 bg_client = bigquery.Client()
 
 
-def create_app(config=__name__, db_options={}):
+def create_app(config=__name__, db_options={}, **kwargs):
+
+    if not RUNNING_LOCAL and not kwargs.get('is_test', False):
+        sentry_sdk.init(
+            dsn="https://5fce4fd9b9404cbe978b509a2465f027@o1176187.ingest.sentry.io/6325459",
+            integrations=[FlaskIntegration()],
+            # Set traces_sample_rate to 1.0 to capture 100%
+            # of transactions for performance monitoring.
+            # We recommend adjusting this value in production.
+            traces_sample_rate=0.1,
+        )
+
 
     app = Flask(__name__)
     app.config.from_object(config)

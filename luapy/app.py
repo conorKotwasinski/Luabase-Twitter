@@ -15,24 +15,6 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 from google.cloud import bigquery
 
-
-RUNNING_LOCAL = str(os.getenv("RUNNING_LOCAL", "0")) == "1"
-print("RUNNING_LOCAL: ", RUNNING_LOCAL)
-
-import google.cloud.logging
-
-if not RUNNING_LOCAL:
-    gcp_loggging_client = google.cloud.logging.Client()
-    gcp_loggging_client.setup_logging()
-
-import luapy.utils.lua_utils as lu
-
-test_from_cloud_run = lu.get_secret('test_from_cloud_run')
-print('test_from_cloud_run: ', test_from_cloud_run)
-
-from luapy.logger import logger
-from luapy.db import create_db
-
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -48,12 +30,24 @@ from luapy.utils.pg_db_utils import (
     getDoneMaxJob,
     getMaxJob,
 )
+
 import luapy.utils.pg_db_utils as pgu
 from luapy.el.btc_etl import extract_transform_load_btc
 from luapy.el.btc_transaction_backlog import get_btc_txn_backlog
 from luapy.el.polygon_etl import extract_transform_load_polygon
 from luapy.el.polygon_node_backlog import get_node_backlog_polygon
+from luapy.logger import logger
+from luapy.db import create_db
 from luapy.job import Job
+import luapy.utils.lua_utils as lu
+
+
+test_from_cloud_run = lu.get_secret('test_from_cloud_run')
+print('test_from_cloud_run: ', test_from_cloud_run)
+
+RUNNING_LOCAL = str(os.getenv("RUNNING_LOCAL", "0")) == "1"
+print("RUNNING_LOCAL: ", RUNNING_LOCAL)
+
 
 if not RUNNING_LOCAL:
     sentry_sdk.init(
@@ -64,6 +58,7 @@ if not RUNNING_LOCAL:
         # We recommend adjusting this value in production.
         traces_sample_rate=0.1,
     )
+
 
 SCRAPING_BEE_API_KEY = lu.get_secret("SCRAPING_BEE_API_KEY")
 CH_ADMIN_PASSWORD = lu.get_secret("CH_ADMIN_PASSWORD")

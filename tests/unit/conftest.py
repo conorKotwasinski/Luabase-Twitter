@@ -55,7 +55,7 @@ def insert_jobs(jobs):
 
 @pytest.fixture(scope='module')
 def client_db():
-    app, db = create_app(db_options={'engine_options': sqlite_engine_options})
+    app, db = create_app(db_options={'engine_options': sqlite_engine_options}, is_test=True)
     app.config.update({
         'TESTING': True,
         'SQLALCHEMY_DATABASE_URI': 'sqlite://',

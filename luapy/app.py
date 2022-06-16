@@ -15,24 +15,6 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 from google.cloud import bigquery
 
-
-RUNNING_LOCAL = str(os.getenv("RUNNING_LOCAL", "0")) == "1"
-print("RUNNING_LOCAL: ", RUNNING_LOCAL)
-
-import google.cloud.logging
-
-if not RUNNING_LOCAL:
-    gcp_loggging_client = google.cloud.logging.Client()
-    gcp_loggging_client.setup_logging()
-
-import luapy.utils.lua_utils as lu
-
-test_from_cloud_run = lu.get_secret('test_from_cloud_run')
-print('test_from_cloud_run: ', test_from_cloud_run)
-
-from luapy.logger import logger
-from luapy.db import create_db
-
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -48,21 +30,26 @@ from luapy.utils.pg_db_utils import (
     getDoneMaxJob,
     getMaxJob,
 )
+
 import luapy.utils.pg_db_utils as pgu
 from luapy.el.btc_etl import extract_transform_load_btc
 from luapy.el.btc_transaction_backlog import get_btc_txn_backlog
 from luapy.el.polygon_etl import extract_transform_load_polygon
 from luapy.el.polygon_node_backlog import get_node_backlog_polygon
+from luapy.logger import logger
+from luapy.db import create_db
+from luapy.job import Job
+import luapy.utils.lua_utils as lu
 
-if not RUNNING_LOCAL:
-    sentry_sdk.init(
-        dsn="https://5fce4fd9b9404cbe978b509a2465f027@o1176187.ingest.sentry.io/6325459",
-        integrations=[FlaskIntegration()],
-        # Set traces_sample_rate to 1.0 to capture 100%
-        # of transactions for performance monitoring.
-        # We recommend adjusting this value in production.
-        traces_sample_rate=0.1,
-    )
+
+test_from_cloud_run = lu.get_secret('test_from_cloud_run')
+print('test_from_cloud_run: ', test_from_cloud_run)
+
+RUNNING_LOCAL = str(os.getenv("RUNNING_LOCAL", "0")) == "1"
+print("RUNNING_LOCAL: ", RUNNING_LOCAL)
+
+
+
 
 SCRAPING_BEE_API_KEY = lu.get_secret("SCRAPING_BEE_API_KEY")
 CH_ADMIN_PASSWORD = lu.get_secret("CH_ADMIN_PASSWORD")
@@ -76,7 +63,18 @@ QUICKNODE_POLYGON_TESTNET = lu.get_secret("POLYGON_TESTNET_QUICKNODE")
 bg_client = bigquery.Client()
 
 
-def create_app(config=__name__, db_options={}):
+def create_app(config=__name__, db_options={}, **kwargs):
+
+    if not RUNNING_LOCAL and not kwargs.get('is_test', False):
+        sentry_sdk.init(
+            dsn="https://5fce4fd9b9404cbe978b509a2465f027@o1176187.ingest.sentry.io/6325459",
+            integrations=[FlaskIntegration()],
+            # Set traces_sample_rate to 1.0 to capture 100%
+            # of transactions for performance monitoring.
+            # We recommend adjusting this value in production.
+            traces_sample_rate=0.1,
+        )
+
 
     app = Flask(__name__)
     app.config.from_object(config)
@@ -113,7 +111,7 @@ def create_app(config=__name__, db_options={}):
     def ping():
         name = os.environ.get("NAME", "World")
         j = {"ok": True, "name": name}
-        logger.info(f"ping...", extra={"json_fields": j})
+        logger.info(f"ping...", extra={"json_fields": j.copy()})
         return json.dumps(j), 200, {"ContentType":"application/json"}
 
 
@@ -181,13 +179,14 @@ def create_app(config=__name__, db_options={}):
             response = _run_job(data, db)
             return response
         except Exception as e:
-            logger.error(''.join(traceback.format_tb(e.__traceback__)))
             j = {
                 "error": str(e),
+                "traceback": logger.error(''.join(traceback.format_tb(e.__traceback__)))
             }
+            pgu.updateJobStatus(db.engine, {"id": data["id"], "status": "failed"})
             return json.dumps(j), 500, {"ContentType": "application/json"}
 
-    return app
+    return app, db
 
 
 def _run_job(data, db):
@@ -218,9 +217,13 @@ def _run_job(data, db):
             "increment": data.get("increment", 10000),
         }
 
-        thread = Thread(target=get_btc_txn_backlog, args=(d,))
-
-        thread.daemon = True
+        thread = Job(
+            target=get_btc_txn_backlog,
+            args=(d,),
+            job_id=data.get("id"),
+            db=db,
+            daemon=True
+        )
         thread.start()
         log_details = {"type": "backlogBtcTxns", "month": d["month"], "id": d["id"]}
         logger.info(
@@ -491,7 +494,7 @@ def getEthNameTags(db, data):
 # }
 # getEthNameTags(testd)
 
-app = create_app()
+app, db = create_app()
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

@@ -4,15 +4,22 @@
 ARG local=cloud
 # Use the official lightweight Python image.
 # https://hub.docker.com/_/python
-FROM python:3.9 as base
+FROM python:3.9 as base-reqs
 COPY requirements.txt /luapy/
 RUN pip3 --default-timeout=600 install -r /luapy/requirements.txt
+
+FROM base-reqs as testbuild-reqs
+COPY requirements-dev.txt /luapy/
+RUN pip3 --default-timeout=600 install -r /luapy/requirements-dev.txt
+
+FROM base-reqs as base
 COPY luapy/ /luapy/
 
 # testbuild includes dev dependencies and tests
-FROM base as testbuild-base
+FROM testbuild-reqs as testbuild-base
 COPY requirements-dev.txt /luapy/
 RUN pip3 --default-timeout=600 install -r /luapy/requirements-dev.txt
+COPY luapy/ /luapy/
 COPY tests/ /tests/
 
 # not local, credentials should already be in the environment

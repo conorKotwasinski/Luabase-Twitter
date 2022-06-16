@@ -113,7 +113,7 @@ def create_app(config=__name__, db_options={}):
     def ping():
         name = os.environ.get("NAME", "World")
         j = {"ok": True, "name": name}
-        logger.info(f"ping...", extra={"json_fields": j})
+        logger.info(f"ping...", extra={"json_fields": j.copy()})
         return json.dumps(j), 200, {"ContentType":"application/json"}
 
 

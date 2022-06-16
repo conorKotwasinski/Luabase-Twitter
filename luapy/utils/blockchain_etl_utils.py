@@ -83,6 +83,7 @@ class EthInMemoryAdapter:
                 "token",
             ]
         ),
+        job_id=-1,
     ):
         self.batch_web3_provider = batch_web3_provider
         self.item_exporter = item_exporter
@@ -93,6 +94,7 @@ class EthInMemoryAdapter:
         self.item_timestamp_calculator = EthItemTimestampCalculator()
         self.web3 = Web3(self.batch_web3_provider)
         self.web3.middleware_stack.inject(geth_poa_middleware, layer=0)
+        self.job_id = job_id
 
     def open(self):
         self.item_exporter.open()
@@ -208,6 +210,7 @@ class EthInMemoryAdapter:
             item_exporter=blocks_and_transactions_item_exporter,
             export_blocks=self._should_export(EntityType.BLOCK),
             export_transactions=self._should_export(EntityType.TRANSACTION),
+            job_id=self.job_id,
         )
         blocks_and_transactions_job.run()
         blocks = blocks_and_transactions_item_exporter.get_items("block")
@@ -226,6 +229,7 @@ class EthInMemoryAdapter:
             item_exporter=exporter,
             export_receipts=self._should_export(EntityType.RECEIPT),
             export_logs=self._should_export(EntityType.LOG),
+            job_id=self.job_id,
         )
         job.run()
         receipts = exporter.get_items("receipt")
@@ -239,6 +243,7 @@ class EthInMemoryAdapter:
             batch_size=self.batch_size,
             max_workers=self.max_workers,
             item_exporter=exporter,
+            job_id=self.job_id,
         )
         job.run()
         token_transfers = exporter.get_items("token_transfer")
@@ -253,6 +258,7 @@ class EthInMemoryAdapter:
             batch_web3_provider=ThreadLocalProxy(lambda: self.batch_web3_provider),
             max_workers=self.max_workers,
             item_exporter=exporter,
+            job_id=self.job_id,
         )
         job.run()
         traces = exporter.get_items("geth_trace")
@@ -265,6 +271,7 @@ class EthInMemoryAdapter:
             # batch_size=self.batch_size, doesn't work for some reason, works in offical repo version
             max_workers=self.max_workers,
             item_exporter=exporter,
+            job_id=self.job_id,
         )
         job.run()
         traces = exporter.get_items("trace")
@@ -277,6 +284,7 @@ class EthInMemoryAdapter:
             batch_size=self.batch_size,
             max_workers=self.max_workers,
             item_exporter=exporter,
+            job_id=self.job_id,
         )
         job.run()
         contracts = exporter.get_items("contract")
@@ -289,6 +297,7 @@ class EthInMemoryAdapter:
             web3=ThreadLocalProxy(lambda: Web3(self.batch_web3_provider)),
             max_workers=self.max_workers,
             item_exporter=exporter,
+            job_id=self.job_id,
         )
         job.run()
         tokens = exporter.get_items("token")

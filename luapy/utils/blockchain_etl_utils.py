@@ -40,12 +40,10 @@ class InMemoryObjectExporter:
         self.end_block = end_block
 
     def export(self):
-        try:
-            self.blockchain_streamer_adapter.open()
-            result = self._do_export()
-        finally:
-            self.blockchain_streamer_adapter.close()
-            return result
+        self.blockchain_streamer_adapter.open()
+        result = self._do_export()
+        self.blockchain_streamer_adapter.close()
+        return result
 
     def _do_export(self):
         result = self.blockchain_streamer_adapter.export_all(

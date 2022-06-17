@@ -284,17 +284,6 @@ def _run_job(data, db):
             "end":data.get("end"),
             "id":data.get("id")
             }
-
-        # j = get_node_backlog_polygon(
-        #     node_uri=QUICKNODE_POLYGON_MAINNET,
-        #     clickhouse_client=getChClient(use_numpy=True),
-        #     non_np_clickhouse_client=getChClient(use_numpy=False),
-        #     pg_db=db.engine,
-        #     job_id = data.get("id"),
-        #     job_type=data.get("type"),
-        #     start_block=data.get("start"),
-        #     end_block=data.get("end")
-        # )
         return json.dumps(log_details), 200, {"ContentType": "application/json"}
 
     if data.get("type") == "polygonTestnetBacklog":

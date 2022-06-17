@@ -190,7 +190,7 @@ def create_app(config=__name__, db_options={}, **kwargs):
             pgu.updateJob(db.engine, updateJobRow)
             data["traceback"] = ''.join(traceback.format_tb(e.__traceback__))
             logger.error(f"run_job error", extra={"json_fields": data})
-            return json.dumps(d), 500, {"ContentType": "application/json"}
+            return json.dumps(data), 500, {"ContentType": "application/json"}
 
     return app, db
 

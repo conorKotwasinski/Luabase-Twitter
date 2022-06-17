@@ -177,14 +177,20 @@ def create_app(config=__name__, db_options={}, **kwargs):
         logger.info(f"run_job...", extra={"json_fields": data})
         try:
             response = _run_job(data, db)
+            logger.info(f"run_job done...", extra={"json_fields": data})
             return response
         except Exception as e:
-            j = {
-                "error": str(e),
-                "traceback": logger.error(''.join(traceback.format_tb(e.__traceback__)))
+            data["error"] = str(e)
+            # pgu.updateJobStatus(db.engine, {"id": data["id"], "status": "failed"})
+            updateJobRow = {
+                "id": data["id"],
+                "status": "failed",
+                "details": json.dumps(data),
             }
-            pgu.updateJobStatus(db.engine, {"id": data["id"], "status": "failed"})
-            return json.dumps(j), 500, {"ContentType": "application/json"}
+            pgu.updateJob(db.engine, updateJobRow)
+            data["traceback"] = ''.join(traceback.format_tb(e.__traceback__))
+            logger.error(f"run_job error", extra={"json_fields": data})
+            return json.dumps(d), 500, {"ContentType": "application/json"}
 
     return app, db
 
@@ -192,10 +198,12 @@ def create_app(config=__name__, db_options={}, **kwargs):
 def _run_job(data, db):
 
     if data.get("type") == "getEthNameTag":
+        logger.info(f"run_job getEthNameTag...", extra={"json_fields": data})
         j = getEthNameTags(db, data)
         return json.dumps(j), 200, {"ContentType": "application/json"}
 
     if data.get("type") == "getBtcEtl":
+        logger.info(f"run_job getBtcEtl...", extra={"json_fields": data})
         target = data.get("target", "both")
         lag = data.get("lag", 6)
         start_block = data.get("startBlock", None)
@@ -207,7 +215,7 @@ def _run_job(data, db):
         return json.dumps(j), 200, {"ContentType": "application/json"}
 
     if data.get("type") == "backlogBtcTxns":
-
+        logger.info(f"run_job backlogBtcTxns...", extra={"json_fields": data})
         d = {
             "month": data.get("month"),
             "bg_client": bg_client,
@@ -233,7 +241,7 @@ def _run_job(data, db):
         return json.dumps(log_details), 200, {'ContentType':'application/json'}
 
     if data.get("type") == "getPolygonEtl":
-
+        logger.info(f"run_job getPolygonEtl...", extra={"json_fields": data})
         j = extract_transform_load_polygon(
             node_uri=QUICKNODE_POLYGON_MAINNET,
             clickhouse_client=getChClient(use_numpy=True),
@@ -249,7 +257,7 @@ def _run_job(data, db):
         return json.dumps(j), 200, {"ContentType": "application/json"}
 
     if data.get("type") == "getPolygonTestnetEtl":
-
+        logger.info(f"run_job getPolygonTestnetEtl...", extra={"json_fields": data})
         j = extract_transform_load_polygon(
             node_uri=QUICKNODE_POLYGON_TESTNET,
             clickhouse_client=getChClient(use_numpy=True),
@@ -265,7 +273,7 @@ def _run_job(data, db):
         return json.dumps(j), 200, {"ContentType": "application/json"}
 
     if data.get("type") == "polygonBacklog":
-
+        logger.info(f"run_job polygonBacklog...", extra={"json_fields": data})
         d = {
             "node_uri":QUICKNODE_POLYGON_MAINNET,
             "clickhouse_client":getChClient(use_numpy=True),
@@ -290,7 +298,7 @@ def _run_job(data, db):
         return json.dumps(log_details), 200, {"ContentType": "application/json"}
 
     if data.get("type") == "polygonTestnetBacklog":
-
+        logger.info(f"run_job polygonTestnetBacklog...", extra={"json_fields": data})
         j = get_node_backlog_polygon(
             node_uri=QUICKNODE_POLYGON_TESTNET,
             clickhouse_client=getChClient(use_numpy=True),
@@ -304,7 +312,7 @@ def _run_job(data, db):
         return json.dumps(j), 200, {"ContentType": "application/json"}
 
     if data.get("type") == "testJob":
-        logger.info(f"run_job is testJob!!!!!!!!!!!: {data}")
+        logger.info(f"run_job testJob...", extra={"json_fields": data})
         updateJobRow = {"id": data["id"], "status": "success"}
         pgu.updateJobStatus(db.engine, updateJobRow)
         j = {"ok": True, "data": updateJobRow}
@@ -318,6 +326,7 @@ def _run_job(data, db):
             return json.dumps(j), 200, {"ContentType": "application/json"}
 
     j = {"ok": True, "data": "running"}
+    logger.info(f"run_job end without return...", extra={"json_fields": data})
     return json.dumps(j), 200, {"ContentType": "application/json"}
 
 

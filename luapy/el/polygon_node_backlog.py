@@ -7,16 +7,16 @@ from luapy.utils.pg_db_utils import updateJobStatus
 from luapy.logger import logger
 
 
-def get_node_backlog_polygon(
-    node_uri,
-    clickhouse_client,
-    non_np_clickhouse_client,
-    pg_db,
-    job_id,
-    job_type,
-    start_block,
-    end_block,
-):
+def get_node_backlog_polygon(data):
+    # data is a dictionary that accepts the following arguments below:
+    node_uri = data['node_uri']
+    clickhouse_client = data['clickhouse_client']
+    non_np_clickhouse_client = data['non_np_clickhouse_client']
+    pg_db = data['pg_db']
+    job_id = data['job_id']
+    job_type = data['job_type']
+    start_block = data['start_block']
+    end_block = data['end_block']
 
     log_details = {
         "type": job_type,

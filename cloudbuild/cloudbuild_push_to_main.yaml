@@ -4,7 +4,7 @@ steps:
   args: [
     'build',
     '--target', 'final',
-    '--build-arg', 'git_short_sha=$SHORT_SHA'
+    '--build-arg', 'git_short_sha=$SHORT_SHA',
     '-t', 'gcr.io/luabase/luabase-py',
     '.'
   ]

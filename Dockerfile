@@ -5,6 +5,8 @@ ARG local=cloud
 # Use the official lightweight Python image.
 # https://hub.docker.com/_/python
 FROM python:3.9 as base-reqs
+ARG git_short_sha
+ENV GIT_SHORT_SHA="${git_short_sha}"
 COPY requirements.txt /luapy/
 RUN pip3 --default-timeout=600 install -r /luapy/requirements.txt
 

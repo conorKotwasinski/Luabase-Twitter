@@ -181,7 +181,6 @@ def create_app(config=__name__, db_options={}, **kwargs):
             return response
         except Exception as e:
             data["error"] = str(e)
-            # pgu.updateJobStatus(db.engine, {"id": data["id"], "status": "failed"})
             updateJobRow = {
                 "id": data["id"],
                 "status": "failed",
@@ -290,7 +289,7 @@ def _run_job(data, db):
         thread.daemon = True
         thread.start()
         log_details = {
-            "type":data.get("type"), 
+            "type":data.get("type"),
             "start":data.get("start"),
             "end":data.get("end"),
             "id":data.get("id")

@@ -75,7 +75,7 @@ def test_run_job_error(client_db, mocker):
                 return {'ok': True, 'row': d['id']}
             except Exception as e:
                 return {'ok': False, 'error': e}
-    mocker.patch('luapy.app.pgu.updateJobStatus', side_effect=updateSqlite)
+    mocker.patch('luapy.app.pgu.updateJob', side_effect=updateSqlite)
 
     response = client.post('/run_job', json={
         'id': 2,

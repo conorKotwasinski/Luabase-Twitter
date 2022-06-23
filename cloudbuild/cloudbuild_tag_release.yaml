@@ -1,0 +1,34 @@
+steps:
+# Tag latest build with release
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: [
+    'container', 'images', 'add-tag',
+    'gcr.io/luabase/luabase-py',
+    'gcr.io/luabase/luabase-py:$TAG_NAME'
+  ]
+
+# Update service image with release image
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: [
+    'beta',
+    'run', 'services', 'update', '$_SERVICE',
+    '--image', 'gcr.io/luabase/luabase-py:$TAG_NAME',
+    '--platform', 'managed',
+    '--min-instances', '10',
+    '--memory', '32Gi',
+    '--cpu', '8000m',
+    '--timeout', '3600',
+    '--no-cpu-throttling',
+    '--project', '$PROJECT_ID',
+    '--set-env-vars', 'WORKERS=${_WORKERS}',
+    '--set-env-vars', 'THREADS=${_THREADS}',
+    '--region', 'us-central1'
+  ]
+
+substitutions:
+  _SERVICE: 'luabase-py'
+  _WORKERS: '1' # default value
+  _THREADS: '8' # default value
+

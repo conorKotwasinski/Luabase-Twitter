@@ -1,7 +1,13 @@
 steps:
 # Build the container image
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '--target', 'final', '-t', 'gcr.io/luabase/luabase-py', '.']
+  args: [
+    'build',
+    '--target', 'final',
+    '--build-arg', 'git_short_sha=$SHORT_SHA'
+    '-t', 'gcr.io/luabase/luabase-py',
+    '.'
+  ]
   env: ['DOCKER_BUILDKIT=1']
 # Push the container image to Container Registry
 - name: 'gcr.io/cloud-builders/docker'
@@ -10,9 +16,9 @@ steps:
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: gcloud
   args: [
-    'run', 
-    'deploy', 'luabase-py-test', 
-    '--image', 'gcr.io/luabase/luabase-py', 
+    'run',
+    'deploy', 'luabase-py-test',
+    '--image', 'gcr.io/luabase/luabase-py',
     '--region', 'us-central1',
     '--set-env-vars', 'WORKERS=1',
     '--set-env-vars', 'THREADS=8',

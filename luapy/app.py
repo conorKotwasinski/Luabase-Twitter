@@ -33,6 +33,8 @@ from luapy.utils.pg_db_utils import (
 
 import luapy.utils.pg_db_utils as pgu
 from luapy.el.btc_etl import extract_transform_load_btc
+from luapy.el.tweets import extract_tweets_load
+from luapy.el.twitterUserLookup import extract_users_load
 from luapy.el.btc_transaction_backlog import get_btc_txn_backlog
 from luapy.el.polygon_etl import extract_transform_load_polygon
 from luapy.el.polygon_node_backlog import get_node_backlog_polygon
@@ -195,6 +197,26 @@ def create_app(config=__name__, db_options={}, **kwargs):
 
 
 def _run_job(data, db):
+
+    if data.get("type") == "getTweets":
+        logger.info(f"run_job getTweets...", extra={"json_fields": data})
+        tweetLimit = data.get("tweetLimit", None)
+        tweetRate = data.get("tweetRate", 76)
+        tweetDuration = data.get("tweetDuration", None)
+        tweetsPerRequest = data.get("tweetsPerRequest", 100)
+
+        j = extract_tweets_load(
+            db.engine, tweetLimit, tweetRate, tweetDuration, tweetsPerRequest
+        )
+        return json.dumps(j), 200, {"ContentType": "application/json"}
+
+    if data.get("type") == "getUsers":
+        logger.info(f"run_job getUsers...", extra={"json_fields": data})
+
+        j = extract_users_load(
+            db.engine
+        )
+        return json.dumps(j), 200, {"ContentType": "application/json"}
 
     if data.get("type") == "getEthNameTag":
         logger.info(f"run_job getEthNameTag...", extra={"json_fields": data})

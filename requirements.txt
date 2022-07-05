@@ -19,3 +19,4 @@ git+https://github.com/luabase/polygon-etl@EIP-1559_ETL_Steven#subdirectory=cli
 # google shit
 google-cloud-secret-manager==2.10.0
 solana
+clickhouse_connect

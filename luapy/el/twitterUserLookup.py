@@ -4,6 +4,7 @@ import numpy as np
 import re
 import json
 import clickhouse_connect
+import os
 from luapy.logger import logger
 from luapy.utils.pg_db_utils import (
     insertJob
@@ -17,7 +18,8 @@ payload = {
 headers = {"content-type": "application/json"}
 bearer_token = "AAAAAAAAAAAAAAAAAAAAAGhIeQEAAAAAiDsOi9PtEdJrSKzgMa486EUB5ZQ%3Dc4IBhrYP1vcRj6IQBhyXyL7A0opvAlLvReQS56IETQ5SCypO6g"
 search_url = "https://api.twitter.com/2/users/by?usernames=twitterdev,twitterapi,adsapi&user.fields=created_at&expansions=pinned_tweet_id&tweet.fields=author_id,created_at"
-pw = 'tvM4udMRZ37sf8Kh'
+user = os.getenv('user')
+pw = os.environ.get('pw')
 
 
 
@@ -148,7 +150,7 @@ def updateIndexes(indexes, errorusername, originalhandles, updatedhandles, df):
 
 
 def sql(df):
-    chClient = clickhouse_connect.get_client(host='twitter-test.luabase.altinity.cloud', port=8443, username='admin', password='tvM4udMRZ37sf8Kh')
+    chClient = clickhouse_connect.get_client(host='twitter-test.luabase.altinity.cloud', port=8443, username=user, password='tvM4udMRZ37sf8Kh')
     sql = '''
     DROP TABLE twitter.users
     '''
@@ -197,10 +199,6 @@ def ascii(df):
     for col in columns:
         df[col] = df[col].apply(lambda x: x.encode('ascii', 'ignore').decode('ascii'))
     return df
-
-
-
-
 
 
 def extract_users_load(pg_db):

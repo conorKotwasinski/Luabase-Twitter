@@ -13,10 +13,9 @@ protobuf==3.20.1
 google-cloud-bigquery
 google-cloud-logging>=3.0.0
 pycodestyle
-git+https://github.com/luabase/bitcoin-etl#egg=bitcoin-etl
-git+https://github.com/luabase/polygon-etl@EIP-1559_ETL_Steven#subdirectory=cli
+git+https://github.com/ClickHouse/clickhouse-connect.git@0452f496df15cc0410be94c5f6fa01ddf2c25c76#egg=clickhouse-connect
+#clickhouse_connect
 # polygon-etl
 # google shit
 google-cloud-secret-manager==2.10.0
 solana
-clickhouse_connect

@@ -1,1 +1,0 @@
-from .vandelay import *

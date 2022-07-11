@@ -32,12 +32,10 @@ from luapy.utils.pg_db_utils import (
 )
 
 import luapy.utils.pg_db_utils as pgu
-from luapy.el.btc_etl import extract_transform_load_btc
+
 from luapy.el.tweets import extract_tweets_load
 from luapy.el.twitterUserLookup import extract_users_load
-from luapy.el.btc_transaction_backlog import get_btc_txn_backlog
-from luapy.el.polygon_etl import extract_transform_load_polygon
-from luapy.el.polygon_node_backlog import get_node_backlog_polygon
+
 from luapy.logger import logger
 from luapy.db import create_db
 from luapy.job import Job
@@ -52,17 +50,11 @@ print("RUNNING_LOCAL: ", RUNNING_LOCAL)
 
 
 
-
-SCRAPING_BEE_API_KEY = lu.get_secret("SCRAPING_BEE_API_KEY")
 CH_ADMIN_PASSWORD = lu.get_secret("CH_ADMIN_PASSWORD")
 
 SQLALCHEMY_DATABASE_URI = lu.get_secret("SUPABASE_SQLALCHEMY_DATABASE_URI")
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQL_POOL_PRE_PING = True
-QUICKNODE_BTC = lu.get_secret("BTC_QUICKNODE")
-QUICKNODE_POLYGON_MAINNET = lu.get_secret("POLYGON_MAINNET_QUICKNODE")
-QUICKNODE_POLYGON_TESTNET = lu.get_secret("POLYGON_TESTNET_QUICKNODE")
-bg_client = bigquery.Client()
 
 
 def create_app(config=__name__, db_options={}, **kwargs):
@@ -199,14 +191,14 @@ def create_app(config=__name__, db_options={}, **kwargs):
 def _run_job(data, db):
 
     if data.get("type") == "getTweets":
-        logger.info(f"run_job getTweets...", extra={"json_fields": data})
+        logger.info(f"run_job getTweets new...", extra={"json_fields": data})
         tweetLimit = data.get("tweetLimit", None)
-        tweetRate = data.get("tweetRate", 76)
-        tweetDuration = data.get("tweetDuration", None)
-        tweetsPerRequest = data.get("tweetsPerRequest", 100)
+        since_id = data.get("since_id", None)
+        max_running=data.get("max_running", 10)
+        job_type=data.get("type")
 
         j = extract_tweets_load(
-            db.engine, tweetLimit, tweetRate, tweetDuration, tweetsPerRequest
+            db.engine, tweetLimit, since_id, max_running, job_type
         )
         return json.dumps(j), 200, {"ContentType": "application/json"}
 
@@ -218,119 +210,6 @@ def _run_job(data, db):
         )
         return json.dumps(j), 200, {"ContentType": "application/json"}
 
-    if data.get("type") == "getEthNameTag":
-        logger.info(f"run_job getEthNameTag...", extra={"json_fields": data})
-        j = getEthNameTags(db, data)
-        return json.dumps(j), 200, {"ContentType": "application/json"}
-
-    if data.get("type") == "getBtcEtl":
-        logger.info(f"run_job getBtcEtl...", extra={"json_fields": data})
-        target = data.get("target", "both")
-        lag = data.get("lag", 6)
-        start_block = data.get("startBlock", None)
-        end_block = data.get("endBlock", None)
-
-        j = extract_transform_load_btc(
-            getChClient(), QUICKNODE_BTC, db.engine, target, lag, start_block, end_block
-        )
-        return json.dumps(j), 200, {"ContentType": "application/json"}
-
-    if data.get("type") == "backlogBtcTxns":
-        logger.info(f"run_job backlogBtcTxns...", extra={"json_fields": data})
-        d = {
-            "month": data.get("month"),
-            "bg_client": bg_client,
-            "clickhouse_client": getChClient(),
-            "pg_db": db,
-            "id": data.get("id"),
-            "increment": data.get("increment", 10000),
-        }
-
-        thread = Job(
-            target=get_btc_txn_backlog,
-            args=(d,),
-            job_id=data.get("id"),
-            db=db,
-            daemon=True
-        )
-        thread.start()
-        log_details = {"type": "backlogBtcTxns", "month": d["month"], "id": d["id"]}
-        logger.info(
-            f'starting backlogBtcTxns job with id {d["id"]} and month {d["month"]}',
-            extra={"json_fields": log_details},
-        )
-        return json.dumps(log_details), 200, {'ContentType':'application/json'}
-
-    if data.get("type") == "getPolygonEtl":
-        logger.info(f"run_job getPolygonEtl...", extra={"json_fields": data})
-        j = extract_transform_load_polygon(
-            node_uri=QUICKNODE_POLYGON_MAINNET,
-            clickhouse_client=getChClient(use_numpy=True),
-            non_np_clickhouse_client=getChClient(use_numpy=False),
-            pg_db=db.engine,
-            job_type=data.get("type"),
-            start_block=data.get("start_block", None),
-            end_block=data.get("end_block", None),
-            lag=data.get("lag", 100),
-            max_running=data.get("max_running", 10),
-            max_blocks_per_job=data.get("max_blocks_per_job", 500),
-        )
-        return json.dumps(j), 200, {"ContentType": "application/json"}
-
-    if data.get("type") == "getPolygonTestnetEtl":
-        logger.info(f"run_job getPolygonTestnetEtl...", extra={"json_fields": data})
-        j = extract_transform_load_polygon(
-            node_uri=QUICKNODE_POLYGON_TESTNET,
-            clickhouse_client=getChClient(use_numpy=True),
-            non_np_clickhouse_client=getChClient(use_numpy=False),
-            pg_db=db.engine,
-            job_type=data.get("type"),
-            start_block=data.get("start_block", None),
-            end_block=data.get("end_block", None),
-            lag=data.get("lag", 100),
-            max_running=data.get("max_running", 10),
-            max_blocks_per_job=data.get("max_blocks_per_job", 500),
-        )
-        return json.dumps(j), 200, {"ContentType": "application/json"}
-
-    if data.get("type") == "polygonBacklog":
-        logger.info(f"run_job polygonBacklog...", extra={"json_fields": data})
-        d = {
-            "node_uri":QUICKNODE_POLYGON_MAINNET,
-            "clickhouse_client":getChClient(use_numpy=True),
-            "non_np_clickhouse_client":getChClient(use_numpy=False),
-            "pg_db":db.engine,
-            "job_id":data.get("id"),
-            "job_type":data.get("type"),
-            "start_block":data.get("start"),
-            "end_block":data.get("end")
-        }
-
-        thread = Thread(target=get_node_backlog_polygon, args=(d,))
-
-        thread.daemon = True
-        thread.start()
-        log_details = {
-            "type":data.get("type"),
-            "start":data.get("start"),
-            "end":data.get("end"),
-            "id":data.get("id")
-            }
-        return json.dumps(log_details), 200, {"ContentType": "application/json"}
-
-    if data.get("type") == "polygonTestnetBacklog":
-        logger.info(f"run_job polygonTestnetBacklog...", extra={"json_fields": data})
-        j = get_node_backlog_polygon(
-            node_uri=QUICKNODE_POLYGON_TESTNET,
-            clickhouse_client=getChClient(use_numpy=True),
-            non_np_clickhouse_client=getChClient(use_numpy=False),
-            pg_db=db.engine,
-            job_id = data.get("id"),
-            job_type=data.get("type"),
-            start_block=data.get("start"),
-            end_block=data.get("end")
-        )
-        return json.dumps(j), 200, {"ContentType": "application/json"}
 
     if data.get("type") == "testJob":
         logger.info(f"run_job testJob...", extra={"json_fields": data})
@@ -428,18 +307,6 @@ def createTagTables():
     return True
 
 
-def getSoup(address):
-    url = f"https://etherscan.io/address/{address}"
-    try:
-        res = send_request(url)
-        if res.ok:
-            return res.content
-        else:
-            print("getSoup error: ", res)
-            return False
-    except Exception as e:
-        print("getSoup error: ", e)
-        return False
 
 
 def getTag(content):
@@ -479,51 +346,6 @@ def getManyTags(addresses, newStart, newEnd):
     chClient.insert_dataframe(
         "INSERT INTO default.name_tags2_local (id, address, name_tag) VALUES", toChDf
     )
-
-
-def getEthNameTags(db, data):
-    logger.info(f"getEthNameTags... {data}")
-    maxRunning = data.get("maxRunning", 1000)
-    jobSummary = getJobSummary(db.engine, data.get("type"))
-    if jobSummary["running"] >= maxRunning:
-        logger.info(f"already max running!")
-        return {"ok": True, "status": f"max of {maxRunning} already running"}
-    maxJob = getMaxJob(db.engine, jobSummary["max_id"])
-    newStart = maxJob["details"].get("end", -1) + 1
-    newEnd = newStart + data.get("step", 100)
-    # insert new jobs that is running
-    jobDetails = {"type": "getEthNameTag", "start": newStart, "end": newEnd}
-    jobRow = {
-        "type": jobDetails["type"],
-        "status": "running",
-        "details": json.dumps(jobDetails),
-    }
-    jobRow = insertJob(db.engine, jobRow)
-    print("jobRow: ", jobRow)
-    logger.info(f"getting addresses... ${jobRow}")
-    addresses = getLuaAddresses(newStart, newEnd)
-    if len(addresses) == 0:
-        logger.info(f"no addresses!")
-        jobDetails["reason"] = "no addresses"
-        updateJobRow = {
-            "id": jobRow["row"]["id"],
-            "status": "error",
-            "details": json.dumps(jobDetails),
-        }
-        updateJob(db.engine, updateJobRow)
-        return {"ok": True, "status": f"no addresses for {newStart} to {newEnd}"}
-    logger.info(f"got {len(addresses)} address...")
-    getManyTags(addresses.to_dict(orient="records"), newStart, newEnd)
-    # mark job complete, successs
-    # jobRow['id']
-    updateJobRow = {
-        "id": jobRow["row"]["id"],
-        "status": "success",
-        "details": json.dumps(jobDetails),
-    }
-    updateJob(db.engine, updateJobRow)
-    logger.info(f"job done. {jobRow}")
-    return {"ok": True}
 
 
 # testd = {
